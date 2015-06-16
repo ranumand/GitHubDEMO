@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This rulebase will be called if the an item is identified as SPACK.
+This rulebase perform following operations:
+1. It will fetch all the child records for the matched logistic variant.
+2. Call a rulebase custom function which will match the child SV's in the PID provided datasources.
+3. Set the Sales_variant_flg as 'Y' for all the matched GTIN's
+
+-->
+
+<rulebase metaversion="0.1">
+	<name>MatchSPACK</name>			
+	<description>Matching SPACK</description>
+
+	<declare usage="input">
+		<var>matchedLVGtin</var>
+		<datatype type="string"/>
+	</declare>
+	
+	<declare usage="output">
+		<var>childSVGTINArray</var>
+		<datatype type="array"/>
+	</declare>	
+	
+	<declare usage="output">
+		<var>sVMatchCount</var>
+		<datatype type="number"/>
+	</declare>
+	
+ 	
+	<constraint>
+	<!-- This constraint will fetch the all GTIN for a matched LV(which is matched with PID)
+	and send the array to a rulebase custom function. Rulebase custom function
+	will check if the the child GTIN's matches with PID SV and return an array of matched SV's
+	-->
+		<name>FetchGTIN</name>
+		<description>Fetch the match GTIN and all its child GTIN</description>	
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<eq>
+					<var>PRODUCTID</var>
+					<var>matchedLVGtin</var>
+				</eq>
+			</and>
+		</condition>
+		<action>	
+			<assign>
+				<var>childSVGTINArray</var>
+				<op func="matchSVs">
+					<var>SESSION/ORGANIZATION_NAME</var>
+					<const type="string">ITEM_MASTER_DS</const>
+					<const type="string">ITEM_CONTENT_DS</const>
+					<var>matchedLVGtin</var>
+				</op>
+			</assign>
+		</action>	
+	</constraint>
+
+		<constraint>
+		<name>countMatchedSV</name>
+		<description>count the matche sales variant for a LV</description>	
+		<condition>
+			<defined>
+				<var>childSVGTINArray</var>
+			</defined>
+		</condition>
+		<action>	
+			<assign>
+					 <var>sVMatchCount</var>
+					 <op func="count">
+						<var>childSVGTINArray</var>
+					 </op>
+			   </assign>
+		</action>	
+	</constraint>	 
+  </rulebase>

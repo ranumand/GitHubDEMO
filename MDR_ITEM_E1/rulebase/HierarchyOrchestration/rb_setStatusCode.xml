@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+	<name>rb_setStatusC0de</name>
+	<description>Set Hierarchy Orchestration status attribute as Accept or Review</description>
+
+	<declare usage="input">
+		<var>StatusCode</var>
+		<datatype type="string"/>
+	</declare>
+
+	<constraint>
+		<name>SetStatusAcceptOrReview</name>
+		<description>Set Status in Hierarchy Orchestration as Accept or Review</description>              
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type = "string">HIERARCHYORCHESTRATION</const>
+				</eq>
+				<defined>
+					<var>StatusCode</var>
+				</defined>				
+			</and>
+		</condition>
+
+		<action>						
+			<assign>
+				<var>ITEM_HIERARCHY_STATUS_CD</var>
+				<var>StatusCode</var>
+			</assign>			
+		</action>
+	</constraint>
+
+</rulebase>

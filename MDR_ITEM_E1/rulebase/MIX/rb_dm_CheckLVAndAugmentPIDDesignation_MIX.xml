@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+<!-- This Rulebase will check if GTIN from VIP(vendor integration portal)
+	is exist in PID as a LV(logistic variant).
+	If a GTIN exist, then augment that CIM record with PID designation. -->
+
+  <name>CheckLVAndAugmentPIDDesignation</name>
+  <description>Check if any VIP GTIN matches with the PID LVs and augment PID designation</description>
+  
+  <declare>
+	  <var>ITEM_MASTER_DS_REF</var>
+	  <link type="datasource">
+		<literal>ITEM_MASTER_DS</literal>
+	  </link>
+  </declare>
+
+  <declare usage="output">
+	<var>isGTINExistAsPIDLv</var>
+	<datatype type="array"/>
+  </declare>
+  
+  <declare usage="output">
+	<var>lVDesignationArray</var>
+	<datatype type="array"/>
+  </declare>
+  
+  <declare usage="output">
+	<var>ruleRouterHrchy</var>
+	<datatype type="string"/>
+  </declare>
+  
+  <declare usage="output">
+	<var>matchedLvItemIdArray</var>
+	<datatype type="array"/>
+  </declare>
+  
+  
+  <!--
+	Validate the Vendor Input Hierarchy with PID (DC_P004, CONV_Fun3_Spec.1)
+  -->
+ <constraint>
+    <name>CheckLVExistance</name>
+    <description>Check if GTIN exist in PID as LV</description>
+    <condition>
+        <eq>
+          <var>CATALOG_NAME</var>
+          <const type="string">ITEM_MASTER</const>
+        </eq>
+    </condition>
+    <action>
+	<slice>
+			
+			<var>ruleRouterHrchy</var>
+			<table source="sql">
+					
+					<literal>ITEM_MASTER_DS_REF/RULE_ROUTER_HIERARCHY_CD</literal>
+					<where>
+						<sql>
+							<and>
+								<eq>
+									<literal>ITEM_MASTER_DS_REF/ITEM_ID</literal>
+									<var>PRODUCTID</var>
+								</eq>
+								<eq>
+									<literal>ITEM_MASTER_DS_REF/PROCUREMENT_VARIANT_FLG</literal>
+									<const type="string">Y</const>
+								</eq>
+							</and>	
+						</sql>
+					</where>
+				</table>
+		</slice>
+	</action>
+  </constraint>
+
+  <!--
+	Validate the Vendor Input Hierarchy with PID (DC_P004, CONV_Fun3_Spec.1)
+  -->
+  <constraint>
+	  <name>PopulateGTINExistFlag</name>
+	  <description>Populate the GTIN exist flag</description>
+	  <condition>
+		  <and>
+			<eq>
+				  <var>CATALOG_NAME</var>
+				  <const type="string">ITEM_MASTER</const>
+			  </eq>
+			  <defined>
+				  <var>ruleRouterHrchy</var>
+			  </defined>
+		  </and>
+	  </condition>
+	  <action>
+		<assign>
+			<var>isGTINExistAsPIDLv</var>
+			<const type="string">True</const>
+		</assign>
+		<assign>
+			<var>PROCUREMENT_VARIANT_FLG</var>
+			<const type="boolean">TRUE</const>
+		</assign>
+		<assign>
+			<var>matchedLvItemIdArray</var>
+			<var>PRODUCTID</var>
+		</assign>
+		<assign>
+			<var>lVDesignationArray</var>
+			<var>ruleRouterHrchy</var>
+		</assign>
+		<clear>
+			<var>ruleRouterHrchy</var>
+		</clear>
+	  </action>
+  </constraint>
+  
+   
+  
+
+
+</rulebase>

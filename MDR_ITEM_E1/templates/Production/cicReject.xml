@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Message externalControlNumber="2004-05-30 14:47:35-08:00" language="en" messageType="Production" mlxmlVersion="2.6" protocol="mlXML" timestamp="1085953656234">
+	<Header>
+		<MessageHeader origin="Sender" role="Retailer">
+			<Enterprise>
+				<PartyID>
+					<PartyName>MDR_ITEM_E1</PartyName>
+					<DBID>34040</DBID>
+					<ShortName>MDRITME1</ShortName>
+				</PartyID>
+			</Enterprise>
+			<Organization>
+				<PartyID>
+					<PartyName>MDR_ITEM_E1</PartyName>
+					<DBID>34049</DBID>
+				</PartyID>
+			</Organization>
+			<Member>
+				<PartyID>
+					<PartyName>mdmadmin</PartyName>
+					<DBID>35120</DBID>
+				</PartyID>
+			</Member>
+			<Credential domain="GLN">
+				<Identity>0011110000019</Identity>
+			</Credential>
+		</MessageHeader>
+		<MessageHeader origin="Receiver" role="Channel">
+			<Enterprise>
+				<PartyID>
+					<PartyName>1Sync</PartyName>
+					<DBID>32701</DBID>
+					<ShortName>1sync</ShortName>
+				</PartyID>
+			</Enterprise>
+			<Organization>
+				<PartyID>
+					<PartyName>1Sync</PartyName>
+					<DBID>32717</DBID>
+				</PartyID>
+			</Organization>
+			<Member>
+				<PartyID>
+					<PartyName>0838016003001</PartyName>
+					<DBID>32778</DBID>
+				</PartyID>
+			</Member>
+			<Credential domain="GLN">
+				<Identity>0838016003001</Identity>
+			</Credential>
+		</MessageHeader>
+	</Header>
+	<Body>		
+		<Document subtype="MIX VIP Reject (Child)" type="CICMessage">
+			<BusinessDocument>
+				<CatalogAction>
+					<CatalogActionHeader>
+						<MasterCatalog>
+							<RevisionID>
+								<BaseName>ITEM_MASTER</BaseName>
+								<Version>1</Version>
+								<DBID>1</DBID>
+							</RevisionID>
+						</MasterCatalog>						
+						<CatalogReference type="MasterCatalog">
+							<RevisionID>
+								<BaseName>ITEM_MASTER</BaseName>
+								<Version>1</Version>
+								<DBID>1</DBID>
+							</RevisionID>							
+						</CatalogReference>
+						<Extension name="SendForCorrection">
+								<Value>No</Value>
+						</Extension>
+						<Extension name="Venus_Reason">
+								<Value></Value>
+						</Extension>
+						<PackageData messageID=""/>
+						<CatalogActionHeaderAck>
+							<AcknowledgmentCode>
+								<Code>
+									<CodeType>AcknowledgmentCode</CodeType>
+									<Value/>
+									<Normal/>
+								</Code>
+							</AcknowledgmentCode>
+							<Owner>
+								<PartyID>
+									<PartyName/>
+									<DBID/>
+								</PartyID>
+							</Owner>
+							<Workitem>
+								<DBID/>
+							</Workitem>
+							<Instructions>
+								<Code>
+									<CodeType>InstructionType</CodeType>
+									<Value/>
+									<Normal>ReasonCode</Normal>
+								</Code>
+								<Description>
+									<Short/>
+									<Long/>
+								</Description>
+							</Instructions>
+						</CatalogActionHeaderAck>
+					</CatalogActionHeader>
+					<CatalogActionDetails>
+					<CatalogItem key="1">
+						<LineNumber>1</LineNumber>
+						<PartNumber>
+							<GlobalPartNumber>
+								<ProdID>
+									<IDNumber>1</IDNumber>
+									<IDExtension/>									
+									<Agency>
+										<Code>
+											<CodeType/>
+											<Value/>
+											<Normal>SOURCE</Normal>
+										</Code>
+									</Agency>
+									<ExternalKey>
+										<Attribute name="PRODUCTID">
+											<Value>1</Value>
+										</Attribute>
+										<Attribute name="PRODUCTIDEXT">
+											<Value/>
+										</Attribute>
+									</ExternalKey>
+									<OriginalIDVersion>1</OriginalIDVersion>
+									<IDVersion>1</IDVersion>
+									<DBID>1</DBID>
+								</ProdID>
+							</GlobalPartNumber>
+						</PartNumber>
+						<CatalogActionDetailsAck/>
+						<Classifications/>
+						<MasterCatalog>
+							<RevisionID>
+							  <BaseName>ITEM_MASTER</BaseName>
+							  <!--DBID>-1</DBID>
+							  <Version>-1</Version-->
+							</RevisionID>
+						</MasterCatalog>
+						<Contact/>
+						<Reference/>
+						<URL/>
+						<Extension/>
+						<ItemData/>
+						<ActionLog/>
+						<RelationshipData/>
+					</CatalogItem>
+					</CatalogActionDetails>
+				</CatalogAction>
+			</BusinessDocument>
+			<OriginalDocument/>
+		</Document>
+	</Body>
+</Message>

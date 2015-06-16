@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1.3">
+	<Owner>TIBCO</Owner>
+	<Name>wf_dm_DeleteRecords_MIX</Name>
+	<Description>delete the records from master catalog</Description>
+	<Parameter name="inDoc" direction="in" type="document" eval="variable">1</Parameter>
+	<Parameter name="outDoc1" direction="out" type="document" eval="variable"/>
+	<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+	<Parameter name="OutDocument" direction="out" type="document" eval="variable">workDoc</Parameter>
+	<!--CIM Activities-->
+	<Activity Name="GetAllInboundItemIDs">
+		<Action>Translate</Action>
+		<Description>Translate to get all inbound item ids</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="Derived" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="Translator" direction="in" type="string" eval="constant">XSLT</Parameter>
+		<Parameter name="Map" direction="in" type="string" eval="constant">MDRITME1/maps/MIX/getItemIdsInStringFormat_MIX.xsl</Parameter>
+		<Parameter name="OutputFormat" direction="in" type="string" eval="constant">XML</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">TRANSLATE</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc123</Parameter>
+	</Activity>
+	<Activity Name="ExtractItemIDs">
+		<Action>EvaluateRuleBase</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+		<Parameter name="AllItemID_STR" direction="in" type="string" eval="xpath" source="/Message/OriginalDocument/text()">workDoc123</Parameter>
+		<Parameter name="ExecutionMode" direction="in" type="string" eval="constant">NoRecords</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="RemoveRecord" direction="in" type="string" eval="constant">NONE</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_dm_GetAllItemIds_MIX.xml</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="AsyncProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="AllItemID_Array" direction="out" eval="variable" type="arraylist">AllItemID_Array</Parameter>
+		<Parameter name="ValidationErrors" direction="out" eval="variable" type="long">fatalErrors</Parameter>
+		<Parameter name="ValidationErrors1" direction="out" eval="variable" type="long">warningErrors</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="FilterRecordsToBeDeleted">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Filter all the records which needs to be deleted</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_dm_getDeleteRecList_MIX.xml</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="inboundRecordList" direction="in" type="arraylist" eval="variable">AllItemID_Array</Parameter>
+		<Parameter name="RelationshipName" direction="in" type="string" eval="constant">ContainedBy</Parameter>
+		<Parameter name="OrganizationId" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@origin='Receiver'][1]/Organization/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter name="deltedRecList" direction="out" eval="variable" type="arraylist">deltedRecList</Parameter>
+		<Parameter name="ValidationErrors" direction="out" eval="variable" type="long">fatalErrors</Parameter>
+		<Parameter name="ValidationErrors1" direction="out" eval="variable" type="long">warningErrors</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="ConcatRecordsIDsToBeDeleted">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Concat all the records which needs to be deleted</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="ExecutionMode" direction="in" type="string" eval="constant">NoRecords</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_dm_concatItemIds_MIX.xml</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="deltedRecList1" direction="in" type="arraylist" eval="variable">deltedRecList</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="PublishedGTIN" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">inDoc</Parameter>
+		<Parameter name="OrganizationId" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@origin='Receiver']/Organization/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter name="concatRecList" direction="out" eval="variable" type="string">concatRecList1</Parameter>
+		<Parameter name="ValidationErrors" direction="out" eval="variable" type="long">fatalErrors</Parameter>
+		<Parameter name="ValidationErrors1" direction="out" eval="variable" type="long">warningErrors</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+		<Parameter name="delconcatRecList" direction="out" eval="variable" type="string">delconcatRecList1</Parameter>
+		<Parameter name="recordstate" direction="out" eval="variable" type="string">recordstate1</Parameter>
+	</Activity>
+	<Activity Name="ExtractRecordKeys">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Fetch all record keys to be deleted</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_dm_extractRecKeysForDelete_MIX.xml</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+		<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+		<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+		<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+		<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+		<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+		<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+		<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+		<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+		<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+		<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+		<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+		<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+		<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+		<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+		<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+		<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+		<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+		<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+		<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+		<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+		<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+		<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+		<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+		<Parameter name="delproductIDs" direction="in" type="string" eval="variable">concatRecList1</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="recKeyList" direction="out" eval="variable" type="arraylist">recKeyList</Parameter>
+		<Parameter name="ValidationErrors" direction="out" eval="variable" type="long">fatalErrors</Parameter>
+		<Parameter name="ValidationErrors1" direction="out" eval="variable" type="long">warningErrors</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="DeleteRecordsFromItem_Master">
+		<Action>DeleteRecord</Action>
+		<Description>Delete records from ITEM_MASTER repository</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DELETERECORDS</Parameter>
+		<Parameter name="ImportDataDeleteRecord" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+		<Parameter name="RecordKey" direction="in" type="arraylist" eval="variable">recKeyList</Parameter>
+		<Parameter name="IncludeDraftRecords" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="RecordsProcessed" direction="out" eval="variable" type="long">RecordsProcessed</Parameter>
+	</Activity>
+	<Activity Name="DeleteRecordcomplete">
+		<Action>NoOperation</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="getOriginalMessageWithDeleteKeyID">
+		<Action>Translate</Action>
+		<Description>Translate to get all inbound item ids</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="Derived" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="Map" direction="in" type="string" eval="constant">MDRITME1/maps/MIX/getOriginalMessage_MIX.xsl</Parameter>
+		<Parameter name="OutputFormat" direction="in" type="string" eval="constant">XML</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">TRANSLATE</Parameter>
+		<Parameter name="Translator" direction="in" type="string" eval="constant">XSLT</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+		<Parameter name="Xsl_Param_DelItemMasterID" direction="in" type="string" eval="xpath" source="/Message/OriginalDocument/text()">workDoc123</Parameter>
+		<Parameter name="Xsl_Param_delproductIDs" direction="in" type="string" eval="variable">delconcatRecList1</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">HierarchyLinkDoc</Parameter>
+	</Activity>
+	<Activity Name="SendHierarchyandLinkInfoToJMS">
+		<Action>SendProtocolMessage</Action>
+		<Description>send InDoc to BW JMS queue to create Hierarchy Information and Link records</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+		<Parameter name="SupplierCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="ChannelOrganizationName" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">inDoc</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">HIERARCHYLINK.OPERATION.OUT_1</Parameter>
+		<Parameter name="MessageID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/@key">inDoc</Parameter>
+		<Parameter name="ExpiryDate" direction="in" type="string" eval="constant">0:1:0:0</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDCATALOG</Parameter>
+		<Parameter name="ExpiryType" direction="in" type="string" eval="constant">RELATIVE</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">HierarchyLinkDoc</Parameter>
+	</Activity>
+	<Activity Name="AddMsgInfoToEventCIN">
+		<Start/>
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Receive</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="xpath" source="/Message/Body/Document/@subtype">inDoc</Parameter>
+		<Parameter name="deploymentMode" direction="in" type="string" eval="xpath" source="/Message/@messageType">inDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">RECEIVE</Parameter>
+		<Parameter name="eventType" direction="in" type="string" eval="constant">PRODUCT</Parameter>
+	</Activity>
+	<Activity Name="DeleteNotificationSubflow">
+		<Action>InitiateSubFlow</Action>
+		<Description>Call sub flow for Publishing mlxml on Notification queue</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_PublishItemToNotificationQueue_MIX.xml</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="string" eval="constant">true</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToSuccess">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event status to Success</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">SUCCESS</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+		<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">false</Parameter>
+	</Activity>
+	<Activity Name="GetItemData">
+		<Action>GetRecord</Action>
+		<Description>Get record data</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="long" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+		<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+		<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+		<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+		<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+		<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+		<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+		<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+		<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+		<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+		<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+		<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+		<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+		<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+		<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+		<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+		<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+		<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+		<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+		<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+		<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+		<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+		<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+		<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+		<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+		<Parameter name="VersionKeyword" direction="in" type="string" eval="constant">LATEST</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="UpdatePublishedGtinflg">
+		<Action>SaveRecord</Action>
+		<Description>Create new versions of records</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SAVERECORD</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">Item_Master</Parameter>
+		<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="GenerateExistenceError" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="ATTRIBUTE_PUBLISHED_GTIN_FLG" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">inDoc</Parameter>
+		<Parameter name="RecordPerAsyncCall" direction="in" type="long" eval="constant">10</Parameter>
+		<Parameter name="Overwrite" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="StandardValidation" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">standard/rulebase/rbgenerateid.xml</Parameter>
+		<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="RecordsAttempted" direction="out" eval="variable" type="long">attemptedCount</Parameter>
+		<Parameter name="RecordsWithErrors" direction="out" eval="variable" type="long">errorsFound</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Error/Done</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">ERROR</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+		<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<!--CIM Transitions-->
+	<Transition FromActivity="GetAllInboundItemIDs" ToActivity="ExtractItemIDs"/>
+	<Transition FromActivity="ExtractItemIDs" ToActivity="FilterRecordsToBeDeleted"/>
+	<Transition FromActivity="ConcatRecordsIDsToBeDeleted" ToActivity="getOriginalMessageWithDeleteKeyID"/>
+	<Transition FromActivity="DeleteRecordsFromItem_Master" ToActivity="DeleteRecordcomplete"/>
+	<Transition FromActivity="DeleteRecordcomplete" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="DeleteNotificationSubflow" ToActivity="GetAllInboundItemIDs"/>
+	<Transition FromActivity="GetItemData" ToActivity="DeleteNotificationSubflow"/>
+	<Transition FromActivity="FilterRecordsToBeDeleted" ToActivity="ConcatRecordsIDsToBeDeleted"/>
+	<Transition FromActivity="AddMsgInfoToEventCIN" ToActivity="GetItemData"/>
+	<Transition FromActivity="ExtractRecordKeys" ToActivity="DeleteRecordsFromItem_Master"/>
+	<Transition FromActivity="UpdatePublishedGtinflg" ToActivity="SendHierarchyandLinkInfoToJMS"/>
+	<Transition FromActivity="getOriginalMessageWithDeleteKeyID" ToActivity="UpdatePublishedGtinflg">
+		<Rule>
+			<Parameter name="delconcatRecList" direction="in" eval="variable" type="string">delconcatRecList1</Parameter>
+			<Parameter name="ProductId" direction="in" eval="xpath" type="string" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">inDoc</Parameter>
+			<Parameter name="recordstate" direction="in" eval="variable" type="string">recordstate1</Parameter>
+			<Parameter name="confirmed" direction="in" eval="constant" type="string">CONFIRMED</Parameter>
+			<Parameter name="unconfirmed" direction="in" eval="constant" type="string">UNCONFIRMED</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[ result = (delconcatRecList.equalsIgnoreCase("dummy") || (!delconcatRecList.equalsIgnoreCase("dummy") && delconcatRecList.contains(ProductId) )) && (recordstate!=null && (recordstate.equalsIgnoreCase(unconfirmed) || recordstate.equalsIgnoreCase(confirmed))); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="getOriginalMessageWithDeleteKeyID" ToActivity="SendHierarchyandLinkInfoToJMS"/>
+	<Transition FromActivity="SendHierarchyandLinkInfoToJMS" ToActivity="ExtractRecordKeys">
+		<Description>Check for the incoming message type</Description>
+		<Rule>
+			<Parameter name="concatRecList2" direction="in" eval="variable" type="string">concatRecList1</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[ com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(concatRecList2); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="SendHierarchyandLinkInfoToJMS" ToActivity="DeleteRecordcomplete"/>
+	<Transition type="error" FromActivity="Any" ToActivity="SetStatusToError"/>
+</Workflow>

@@ -1,0 +1,738 @@
+<?xml version="1.0"?>
+<!--  
+    $Revision: 99165 $
+
+    Route  the Product Edit to approvers and data custodiansl.
+    There are 2 steps in this workflow
+    1. InternalApproval - uses 'Record Edit Approval' to identify approvers
+    2. TargetedRejection - If there are any rejections then send it back to data custodians , identified by 'Data Custodian' rules
+    3. Added SpawnWorkflow activity for V2V - to publish the record to velosel datapool.
+-->
+<Workflow Version="1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="Workflow.xsd">
+	<Owner>TIBCO</Owner>
+	<Name>wfin26producteditapprovalv3</Name>
+	<Description>Process for approval of modified or deleted records</Description>
+	<Parameter direction="in" name="inDoc" type="document" eval="variable">1</Parameter>
+	<Parameter direction="out" name="outDoc1" type="document" eval="variable"/>
+	<!-- Approval loop -->
+	<Activity Name="NoOperation">
+		<Start/>
+		<Action>NoOperation</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="GetEventDescriptionForEvent">		
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Check the repository name and subtype</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" eval="constant" type="string">EVALUATERULEBASE</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" eval="constant" type="boolean">false</Parameter>
+		<Parameter name="Rulebase" direction="in" eval="constant" type="string">MDRITME1/rulebase/rb_GetEventDescription.xml</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="REPO_NAME" type="string" >inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+		<Parameter name="ExecutionMode" direction="in" eval="constant" type="string">NoRecords</Parameter>
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter name="event_desc" direction="out" eval="variable" type="string">event_desc</Parameter>               
+	</Activity>
+	<Activity Name="UpdateDescriptionForEvent">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event description as per repository name</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="variable">event_desc</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalMoveToFirst">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next step</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">PRODUCTEDITINTERNALAPPROVAL</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="constant" type="string">Step1</Parameter>
+		<Parameter direction="in" name="ConversationType" eval="constant" type="string">Global</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ProductEditInternalApproval</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">InternalApprovalNextState</Parameter>
+	</Activity>
+	<Activity Name="GetItemData">
+		<Action>GetRecord</Action>
+		<Description lang="en">Get record data</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Agency">SOURCE</Parameter>
+		<Parameter direction="in" eval="xpath" type="long" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="CompareRecord">
+		<Action>CompareRecord</Action>
+		<Description lang="en">Compare with previous confirmed version and generate an output document</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="CompareKeyword" type="string" eval="constant">PREVIOUS_CONFIRMED_VERSION</Parameter>
+		<Parameter direction="in" name="FullCompareFlag" type="string" eval="constant">False</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalWorkItemModify">
+		<Action>CreateWorkItem</Action>
+		<Description lang="en">Create workitem for approval of the modification of record</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" eval="constant" type="string" name="Intent">Approval</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName">GTIN</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName1">SHORTDESC</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName2">UOM</Parameter>
+		<Parameter direction="in" eval="rule" source="Record Edit Approval" type="long" name="ParticipantID">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="FormPresentation">com.tibco.mdm.ui.workflow.engine.workitem.templates.ProductEditApproval</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="TaskType">CATALOGMESSAGE</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">wiDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="WorkItemCreated">approvalFlag</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="MergedDocument">workDoc</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryType">RELATIVE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryDate">1:0:0:0</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalWorkItemDelete">
+		<Action>CreateWorkItem</Action>
+		<Description lang="en">Create workitem for approval of the modification of record</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName">GTIN</Parameter>
+		<Parameter direction="in" name="Intent" eval="constant" type="string">Notify</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName1">SHORTDESC</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName2">UOM</Parameter>
+		<Parameter direction="in" eval="rule" source="Record Delete Approval" type="long" name="ParticipantID">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="FormPresentation">com.tibco.mdm.ui.workflow.engine.workitem.templates.ProductDeleteApproval</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="TaskType">CATALOGMESSAGE</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">wiDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="WorkItemCreated">approvalFlag</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="MergedDocument">workDoc</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryType">RELATIVE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryDate">1:0:0:0</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalMoveToNext">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next step</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="rule" source="Record Edit Approval" type="string">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationType" eval="constant" type="string">Global</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ProductEditInternalApproval</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">InternalApprovalNextState</Parameter>
+		<Parameter direction="out" name="CouldMove" eval="variable" type="string">approvalCouldMove</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalMoveToNextDelete">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next step</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="rule" source="Record Delete Approval" type="string">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationType" eval="constant" type="string">Global</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ProductEditInternalApproval</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">InternalApprovalNextState</Parameter>
+		<Parameter direction="out" name="CouldMove" eval="variable" type="string">approvalCouldMove</Parameter>
+	</Activity>
+	<!-- Sample activity to turn the flip the bundle root -->
+	<Activity Name="SendTimeOutEmail">
+		<Action>Send</Action>
+		<Description>Send a email stating that record edit workitem has timed out</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Address">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" name="Sender" type="string">support@tibco.com</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" eval="variable" name="InDocument" type="document">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" name="Presentation" type="string">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailProductEditTimeOut</Parameter>
+		<Parameter direction="in" eval="variable" name="Approver" type="string">ParticipantName</Parameter>
+	</Activity>
+	<!-- End of approval loop -->
+	<!-- Targeted Rejection loop -->
+	<Activity Name="TargetedRejectionMoveToFirst">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next targeted rejection step</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TARGETTEDREJECTIONEDIT</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="constant" type="string">Step1</Parameter>
+		<Parameter direction="in" name="ConversationType" eval="constant" type="string">Global</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ProductAddTargetedRejection</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">TargetedRejectionNextState</Parameter>
+	</Activity>
+	<Activity Name="TargetedRejectionWorkItem">
+		<Action>CreateWorkItem</Action>
+		<Description lang="en">Create workitem for targeted rejection edit of the new record</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" eval="constant" type="string" name="Intent">Correction</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName">GTIN</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName1">SHORTDESC</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName2">UOM</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">pl1</Parameter>
+		<Parameter direction="in" eval="rule" source="Data Custodian" type="long" name="ParticipantID">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="FormPresentation">com.tibco.mdm.ui.workflow.engine.workitem.templates.ProductEditEdit</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="TaskType">CATALOGMESSAGE</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">wiDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="WorkItemCreated">correctionFlag</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="MergedDocument">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryType">RELATIVE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryDate">1:0:0:0</Parameter>
+	</Activity>
+	<Activity Name="TargetedRejectionMoveToNext">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set targeted rejection to next step</Description>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">pl1</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="rule" source="Data Custodian" type="string">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationType" eval="constant" type="string">Global</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ProductAddTargetedRejection</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">TargetedRejectionNextState</Parameter>
+		<Parameter direction="out" name="CouldMove" eval="variable" type="string">targetedRejectionCouldMove</Parameter>
+	</Activity>
+	<Activity Name="SendTimeOutEmailForTargetedRejectionWorkItem">
+		<Action>Send</Action>
+		<Description>Send a email stating that targeted rejection workitem has timed out</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Address">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" name="Sender" type="string">support@tibco.com</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" eval="variable" name="InDocument" type="document">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" name="Presentation" type="string">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailProductEditTimeOut</Parameter>
+		<Parameter direction="in" eval="variable" name="Approver" type="string">ParticipantName</Parameter>
+	</Activity>
+	<!-- End of Targeted Rejection loop -->
+	<!-- State/Status maintenance -->
+	<Activity Name="SetStatusToSuccess">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event state to Success/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">SUCCESS</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="variable">event_desc</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event state to Error/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">ERROR</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="variable">event_desc</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalResultEmail">
+		<Action>Send</Action>
+		<Description lang="en">Send internal approval result email</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="long" name="Address">workDoc</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" name="Subject" type="string" eval="constant">Catalog Record Edit Approval </Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailProductEditApproval1</Parameter>
+	</Activity>
+	<!--Activity Name="InternalApprovalRejectEmail">
+		<Action>Send</Action>
+		<Description lang="en">Send internal approval result email</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="long" name="Address">workDoc</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" name="Subject" type="string" eval="constant">Catalog Record Edit Approval </Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailProductEditApproval1</Parameter>
+	</Activity-->
+	<Activity Name="ConflictResolutionGoToFirstC">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to first step for conflict resolution</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">STATETRANSITION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="constant" type="string">Step1</Parameter>
+		<Parameter direction="in" name="ConversationType" eval="constant" type="string">Global</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ConflictResolution</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">InternalApprovalNextState</Parameter>
+	</Activity>
+	<Activity Name="ConflictResolutionWIC">
+		<Action>CreateWorkItem</Action>
+		<Description lang="en">Create a workitem to resolve conflicts - target state Confirmed</Description>
+		<Execution>SYNCHR</Execution>
+		<!-- Intent is required to show correct workitem description -->
+		<Parameter direction="in" eval="constant" type="string" name="Intent">Conflict Resolution</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName">GTIN</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName1">SHORTDESC</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RecordAttributeName2">UOM</Parameter>
+		<Parameter direction="in" eval="variable" type="long" name="ReferenceStepID">update_step</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CONFLICTRESOLUTIONWORKITEM</Parameter>
+		<Parameter direction="in" eval="rule" source="Conflict Resolution" type="long" name="ParticipantID">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="FormPresentation">com.tibco.mdm.ui.workflow.engine.workitem.templates.ConflictResolution</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="TaskType">CATALOGMESSAGE</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryType">RELATIVE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryDate">1:0:0:0</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RequestedState">CONFIRMED</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">wiDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="WorkItemCreated">approvalFlag</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="MergedDocument">workDoc</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+	</Activity>
+	<Activity Name="ConflictResolutionGoToNextC">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next step for conflict resolution</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="rule" source="Conflict Resolution" type="string">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationType" eval="constant" type="string">Global</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ConflictResolution</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">ConflictResolutionNextState</Parameter>
+		<Parameter direction="out" name="CouldMove" eval="variable" type="string">approvalCouldMove</Parameter>
+	</Activity>
+	<Activity Name="CheckRecordState">
+		<Action>CheckRecordState</Action>
+		<Description lang="en">Check state of the record</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CHECKRECORDSTATE</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">inRL</Parameter>
+		<Parameter direction="in" name="CheckRecordState" type="string" eval="constant">CheckInWorkflow</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">recordsInWorkflow</Parameter>
+		<Parameter direction="out" name="RecordProcessed" type="long" eval="variable">recordsProcessed</Parameter>
+		<!--<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>-->
+	</Activity>
+	<Activity Name="JoinExistingWorkflow">
+		<Action>JoinExistingWorkflow</Action>
+		<Description lang="en">Join the existing workflow</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">JOINWORKFLOW</Parameter>
+		<!--<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>-->
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">inRL</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsApproved">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set the record status as Confirmed</Description>
+		<Parameter direction="in" name="Status" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="StepID">update_step</Parameter>
+		<Parameter direction="out" name="CommandStatus" type="string" eval="variable">commandStatus</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsApprovedOR">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set the record status as Confirmed</Description>
+		<Parameter direction="in" name="Status" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="OverrideConflict" type="boolean" eval="constant">TRUE</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="StepID">update_step</Parameter>
+		<Parameter direction="out" name="CommandStatus" type="string" eval="variable">commandStatus</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsRejected">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set the record status as Rejected</Description>
+		<Parameter direction="in" name="Status" type="string" eval="constant">REJECTED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+	</Activity>
+	<Activity Name="RejectDueToWorkflowError">
+		<Action>Send</Action>
+		<Description lang="en">Error occured during workflow processing</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">inDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="long" name="Address">inDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailProductEditWorkflowError</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Form">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">inDoc</Parameter>
+	</Activity>
+	<Activity Name="InitiateSync">
+		<Action>InitiateSubFlow</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">standard/workflow/wfin26cim2cimsyncV1</Parameter>		
+		<Parameter name="EVENTDESCRIPTOR" direction="in" type="string" eval="xpath" source="/Message/Body/Document/@subtype">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">inRL</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" type="document" eval="variable">workDoc</Parameter>
+	</Activity>
+	<!-- State/Status maintenance -->
+	<Transition FromActivity="NoOperation" ToActivity="GetEventDescriptionForEvent">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="Repo1" type="string" >PRIMARY_DEPARTMENT</Parameter>
+			<Parameter direction="in" eval="constant" name="Repo2" type="string" >RECAP_DEPARTMENT</Parameter>
+			<Parameter direction="in" eval="constant" name="Repo3" type="string" >DEPARTMENT</Parameter>
+			<Parameter direction="in" eval="constant" name="Repo4" type="string" >CLASS</Parameter>
+			<Parameter direction="in" eval="constant" name="Repo5" type="string" >SUBCLASS</Parameter>
+			<Parameter direction="in" eval="constant" name="Repo6" type="string" >EVENT_LKP</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ((catalogName.equalsIgnoreCase(Repo1)) ||(catalogName.equalsIgnoreCase(Repo2)) ||(catalogName.equalsIgnoreCase(Repo3))||(catalogName.equalsIgnoreCase(Repo4))||(catalogName.equalsIgnoreCase(Repo5))||(catalogName.equalsIgnoreCase(Repo6))) ; ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="GetEventDescriptionForEvent" ToActivity="UpdateDescriptionForEvent"/>
+	<Transition FromActivity="UpdateDescriptionForEvent" ToActivity="InternalApprovalMoveToFirst"/>
+	<Transition FromActivity="NoOperation" ToActivity="InternalApprovalMoveToFirst"/>
+	<Transition FromActivity="InternalApprovalMoveToFirst" ToActivity="GetItemData"/>
+	<Transition FromActivity="GetItemData" ToActivity="CompareRecord"/>
+	<Transition FromActivity="CompareRecord" ToActivity="InternalApprovalWorkItemModify">
+		<Description>Use Modification Forms if action is Modify.</Description>
+		<Rule>
+			<Parameter name="action" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/ActionCode/Code/Normal/text()" direction="in">workDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">DeleteProduct</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsIgnoringCase(action, inputParamString);
+			]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CompareRecord" ToActivity="InternalApprovalWorkItemDelete">
+		<Description>Use Delete Forms if action is Delete.</Description>
+		<Rule>
+			<Parameter name="action" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/ActionCode/Code/Normal/text()" direction="in">workDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">DeleteProduct</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(action, inputParamString);
+			]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalWorkItemModify" ToActivity="InternalApprovalWorkItemModify">
+		<Description>Test that all created modify approval workitems have been completed or someone has rejected workitem.</Description>
+		<Rule>
+			<Parameter name="wicreated" type="boolean" eval="variable" direction="in">approvalFlag</Parameter>
+			<Parameter name="numberCreated" type="long" eval="variable" direction="in">NumberCreated</Parameter>
+			<Parameter name="numberCompleted" type="long" eval="variable" direction="in">NumberCompleted</Parameter>
+			<Parameter name="response" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.responseDoesNotEqualReject(wicreated, numberCreated, numberCompleted, response);
+			]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalWorkItemDelete" ToActivity="InternalApprovalWorkItemDelete">
+		<Description>Test that all created delete approval workitems have been completed or someone has rejected workitem.</Description>
+		<Rule>
+			<Parameter name="wicreated" type="boolean" eval="variable" direction="in">approvalFlag</Parameter>
+			<Parameter name="numberCreated" type="long" eval="variable" direction="in">NumberCreated</Parameter>
+			<Parameter name="numberCompleted" type="long" eval="variable" direction="in">NumberCompleted</Parameter>
+			<Parameter name="response" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.responseDoesNotEqualReject(wicreated, numberCreated, numberCompleted, response);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<!--the next two transitions go to movetonext depending on which activity is being used (modify or delete)-->
+	<Transition FromActivity="InternalApprovalWorkItemModify" ToActivity="InternalApprovalMoveToNext">
+		<Description>Do the merge if the workitem was created</Description>
+		<Rule>
+			<Parameter name="workitemcreation" type="boolean" eval="variable" direction="in">approvalFlag</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.setToBoolean(workitemcreation);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalWorkItemDelete" ToActivity="InternalApprovalMoveToNextDelete">
+		<Description>Do the merge if the workitem was created</Description>
+		<Rule>
+			<Parameter name="workitemcreation" type="boolean" eval="variable" direction="in">approvalFlag</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.setToBoolean(workitemcreation);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<!--the next two transitions go to either modify or delete from movetonext -->
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="InternalApprovalWorkItemModify">
+		<Description>If not done, loop</Description>
+		<Rule>
+			<Parameter name="state" type="string" eval="variable" direction="in">InternalApprovalNextState</Parameter>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="action" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/ActionCode/Code/Normal/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfProdEditApprovalTransition.internalApprovalMoveToNextToInternalApprovalWorkItemModify(state, status, action);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalMoveToNextDelete" ToActivity="InternalApprovalWorkItemDelete">
+		<Description>If not done, loop</Description>
+		<Rule>
+			<Parameter name="state" type="string" eval="variable" direction="in">InternalApprovalNextState</Parameter>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="action" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber=1]/ActionCode/Code/Normal/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfProdEditApprovalTransition.internalApprovalMoveToNextDeleteToInternalApprovalWorkItemDelete(state, status, action);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalWorkItemModify" ToActivity="UpdateRecordStateAsApproved"/>
+	<Transition FromActivity="InternalApprovalWorkItemDelete" ToActivity="UpdateRecordStateAsApproved"/>
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="UpdateRecordStateAsApproved">
+		<Description>If accept, send catalog.</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Accept</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNullOrEqualsIgnoreCase(status, inputParamString);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalMoveToNextDelete" ToActivity="UpdateRecordStateAsApproved">
+		<Description>If accept, send catalog.</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Accept</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNullOrEqualsIgnoreCase(status, inputParamString);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<!--====================================================
+    == Continue Modify Record Flow - Support For Conflict Handling Starts Here
+    ======================================================-->
+	<Transition FromActivity="UpdateRecordStateAsApproved" ToActivity="ConflictResolutionGoToFirstC">
+		<Description>If conflict resolution is requried</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="variable" direction="in">commandStatus</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">ConflictResolutionRequired</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(status, inputParamString);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="UpdateRecordStateAsApproved" ToActivity="CheckRecordState"/>
+	<Transition FromActivity="ConflictResolutionGoToFirstC" ToActivity="ConflictResolutionWIC">
+		<Description>Go to workitem only if participantIds exist.</Description>
+		<Rule>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Parameter direction="in" eval="rule" source="Conflict Resolution" type="arraylist" name="ParticipantID">workDoc</Parameter>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(ParticipantID);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ConflictResolutionGoToFirstC" ToActivity="UpdateRecordStateAsApprovedOR"/>
+	<Transition FromActivity="ConflictResolutionWIC" ToActivity="ConflictResolutionWIC">
+		<Description>Test that all created modify approval workitems have been completed or someone has rejected workitem.</Description>
+		<Rule>
+			<Parameter name="wicreated" type="boolean" eval="variable" direction="in">approvalFlag</Parameter>
+			<Parameter name="numberCreated" type="long" eval="variable" direction="in">NumberCreated</Parameter>
+			<Parameter name="numberCompleted" type="long" eval="variable" direction="in">NumberCompleted</Parameter>
+			<Parameter name="response" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.responseDoesNotEqualReject(wicreated, numberCreated, numberCompleted, response);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ConflictResolutionWIC" ToActivity="ConflictResolutionGoToNextC">
+		<Description>Do the merge if the workitem was created</Description>
+		<Rule>
+			<Parameter name="workitemcreation" type="boolean" eval="variable" direction="in">approvalFlag</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.setToBoolean(workitemcreation);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ConflictResolutionWIC" ToActivity="CheckRecordState"/>
+	<Transition FromActivity="ConflictResolutionGoToNextC" ToActivity="ConflictResolutionWIC">
+		<Description>If not done, loop</Description>
+		<Rule>
+			<Parameter name="state" type="string" eval="variable" direction="in">ConflictResolutionNextState</Parameter>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.statusEqualsAccept(state, status);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ConflictResolutionGoToNextC" ToActivity="UpdateRecordStateAsApprovedOR"/>
+	<Transition FromActivity="UpdateRecordStateAsApprovedOR" ToActivity="CheckRecordState"/>
+	<Transition FromActivity="CheckRecordState" ToActivity="JoinExistingWorkflow">
+		<Description>If record in workflow, then Join Existing Workflow</Description>
+		<Rule>
+			<Parameter name="outRC" type="recordlist" eval="variable" direction="in">recordsInWorkflow</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(outRC);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="JoinExistingWorkflow" ToActivity="SetStatusToSuccess"/>
+	<!-- ================================================================== -->
+	<!-- <Transition FromActivity="CheckRecordState" ToActivity="InitiateSync">
+		<Description>If the Rulebase Selection Business Process Rule is set, only then transition to ApplySynchRuleBase and Spawn Publish Workflow</Description>
+		<Rule>
+			<Parameter name="software_edition" type="string" eval="variable"  direction="in">SOFTWARE_EDITION</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isGDSN_SoftwareEdition(software_edition);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition> -->
+	<!--===================================================
+    == Continue Modify Record Flow - Support For Conflict Handling Ends Here
+    =====================================================-->
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="UpdateRecordStateAsRejected">
+		<Description>If reject</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="sendforcorrection" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='SendForCorrection']/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsAcceptAndOptionIsNotTrue(status, sendforcorrection);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalMoveToNextDelete" ToActivity="UpdateRecordStateAsRejected">
+		<Description>If reject</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="sendforcorrection" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='SendForCorrection']/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsAcceptAndOptionIsNotTrue(status, sendforcorrection);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="TargetedRejectionMoveToFirst">
+		<Description>If reject</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="sendforcorrection" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='SendForCorrection']/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsAcceptAndOptionIsTrue(status, sendforcorrection);
+             ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="TargetedRejectionMoveToFirst" ToActivity="TargetedRejectionWorkItem"/>
+	<Transition FromActivity="TargetedRejectionWorkItem" ToActivity="TargetedRejectionWorkItem">
+		<Description>Test that all created rejection workitems have been completed </Description>
+		<Rule>
+			<Parameter name="wicreated" type="boolean" eval="variable" direction="in">correctionFlag</Parameter>
+			<Parameter name="numberCreated" type="long" eval="variable" direction="in">NumberCreated</Parameter>
+			<Parameter name="numberCompleted" type="long" eval="variable" direction="in">NumberCompleted</Parameter>
+			<Parameter name="response" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.responseDoesNotEqualReject(wicreated, numberCreated, numberCompleted, response);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="TargetedRejectionWorkItem" ToActivity="TargetedRejectionMoveToNext">
+		<Description>Do the merge if the workitem was created</Description>
+		<Rule>
+			<Parameter name="workitemcreation" type="boolean" eval="variable" direction="in">correctionFlag</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.setToBoolean(workitemcreation);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="TargetedRejectionWorkItem" ToActivity="InternalApprovalMoveToFirst"/>
+	<Transition FromActivity="TargetedRejectionMoveToNext" ToActivity="TargetedRejectionWorkItem">
+		<Description>If not done, loop</Description>
+		<Rule>
+			<Parameter name="state" type="string" eval="variable" direction="in">TargetedRejectionNextState</Parameter>
+			<Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.statusEqualsAccept(state, status);
+            ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="TargetedRejectionMoveToNext" ToActivity="InternalApprovalMoveToFirst"/>
+	<Transition FromActivity="UpdateRecordStateAsRejected" ToActivity="InternalApprovalResultEmail"/>
+	<Transition FromActivity="UpdateRecordStateAsApproved" ToActivity="InternalApprovalResultEmail"/>
+	<!-- Spawn workflows if approval was obtained. -->
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="InitiateSync">
+		<Description lang="en">If accept, send catalog.</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Accept</Parameter>
+			<Parameter name="software_edition" type="string" eval="variable"  direction="in">SOFTWARE_EDITION</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNullOrEqualsIgnoreCaseForGDSN(status, inputParamString,software_edition);
+			]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<!-- If user did not approve of batch, all products are rejected. Send email and end the event -->
+	<Transition FromActivity="CheckRecordState" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="SetStatusToSuccess"/>
+	<Transition type="timeout" FromActivity="InternalApprovalWorkItemModify" ToActivity="SendTimeOutEmail"/>
+	<Transition type="timeout" FromActivity="InternalApprovalWorkItemDelete" ToActivity="SendTimeOutEmail"/>
+	<Transition type="timeout" FromActivity="TargetedRejectionWorkItem" ToActivity="SendTimeOutEmailForTargetedRejectionWorkItem"/>
+	<Transition type="error" FromActivity="Any" ToActivity="RejectDueToWorkflowError"/>
+	<Transition FromActivity="RejectDueToWorkflowError" ToActivity="SetStatusToError"/>
+</Workflow>

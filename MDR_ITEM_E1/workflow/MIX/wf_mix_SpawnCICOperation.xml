@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1.3">
+	<Owner>TIBCO</Owner>
+	<Name>wf_mix_SpawnCICOperation</Name>
+	<Description>SpawnCICOperation</Description>
+	<Parameter name="inDoc" direction="in" type="document" eval="variable">1</Parameter>
+	<Parameter name="outDoc1" direction="out" type="document" eval="variable"/>
+	<!--CIM Activities-->
+	<Activity Name="GetItemData">
+		<Start/>
+		<Action>GetRecord</Action>
+		<Description>Get record data</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+		<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="long" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="SendCICReview">
+		<Action>InitiateSubFlow</Action>
+		<Description>Spawn the subworkflow for Matching attributes in PID and update MDM</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_SendCICReview_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="constant">The Kroger Family Tree class attached to this item is currently assigned to the data migration process.  During this process, only existing items can be accepted if submitted in VIP as an Initial Load.  NEW items cannot be accepted until the completion of the migration step.</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+	</Activity>
+	<Activity Name="SendCICReject">
+		<Action>InitiateSubFlow</Action>
+		<Description>Spawn the subworkflow for Matching attributes in PID and update MDM</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_mix_HierarchyRoleCICReject.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="constant">The Kroger Family Tree class attached to this item is currently assigned to the data migration process.  During this process, only existing items can be accepted if submitted in VIP as an Initial Load.  NEW items cannot be accepted until the completion of the migration step.</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+	</Activity>
+	<Activity Name="SendCICAccept">
+		<Action>InitiateSubFlow</Action>
+		<Description>Spawn the subworkflow for Matching attributes in PID and update MDM</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_SendCICSynchronization_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="constant">The Kroger Family Tree class attached to this item is currently assigned to the data migration process.  During this process, only existing items can be accepted if submitted in VIP as an Initial Load.  NEW items cannot be accepted until the completion of the migration step.</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToSuccess">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Success/Done</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">SUCCESS</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+	</Activity>
+	<Activity Name="SetEventStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description>Error occurred in workflow</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">ERROR</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+	</Activity>
+	<Activity Name="HandleException">
+		<Action>HandleException</Action>
+		<Description>Handle Exception</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">HANDLEEXCEPTION</Parameter>
+		<Parameter name="BackupLogs" direction="in" type="string" eval="constant">F</Parameter>
+		<Parameter name="NoOfBackup" direction="in" type="long" eval="constant">5</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="">CIM_errorDoc</Parameter>
+	</Activity>
+	<Activity Name="PublishToBW">
+		<Action>SendProtocolMessage</Action>
+		<Description>Publish Error Message to BW.</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">Q_ECM_INTGR_POSTKLEAR</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">CIM_errorDoc</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="ChannelOrganizationName" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">CIM_errorDoc</Parameter>
+		<Parameter name="TradingPartnerCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDMESSAGE</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">responseDoc</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event status to Error/Done</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">ERROR</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+		<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<!--CIM Transitions-->
+	<Transition FromActivity="HandleException" ToActivity="PublishToBW"/>
+	<Transition FromActivity="PublishToBW" ToActivity="SetEventStatusToError"/>
+	<Transition FromActivity="GetItemData" ToActivity="SendCICReview">
+		<Description>If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter name="subdoctype" type="string" direction="in" eval="xpath" source="/Message/Body/Document/@subtype">workDoc</Parameter>
+			<Parameter name="inputParamString" type="string" direction="in" eval="constant">MIX VIP Review (Child)</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(subdoctype, inputParamString);]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="GetItemData" ToActivity="SendCICReject">
+		<Description>If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter name="subdoctype" type="string" direction="in" eval="xpath" source="/Message/Body/Document/@subtype">workDoc</Parameter>
+			<Parameter name="inputParamString" type="string" direction="in" eval="constant">MIX VIP Reject (Child)</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(subdoctype, inputParamString);]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="GetItemData" ToActivity="SendCICAccept">
+		<Description>If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter name="subdoctype" type="string" direction="in" eval="xpath" source="/Message/Body/Document/@subtype">workDoc</Parameter>
+			<Parameter name="inputParamString" type="string" direction="in" eval="constant">MIX VIP Sync (Child)</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(subdoctype, inputParamString);]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="SendCICReject" ToActivity="HandleException">
+		<Description>If error in subflow</Description>
+		<Rule>
+			<Parameter direction="in" eval="variable" name="errorFlag" type="boolean" >errorFlag</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = (errorFlag!= null && errorFlag); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="SendCICReject" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="SendCICReview" ToActivity="HandleException">
+		<Description>If error in subflow</Description>
+		<Rule>
+			<Parameter direction="in" eval="variable" name="errorFlag" type="boolean" >errorFlag</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = (errorFlag!= null && errorFlag); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="SendCICReview" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="SendCICAccept" ToActivity="HandleException">
+		<Description>If error in subflow</Description>
+		<Rule>
+			<Parameter direction="in" eval="variable" name="errorFlag" type="boolean" >errorFlag</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = (errorFlag!= null && errorFlag); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="SendCICAccept" ToActivity="SetStatusToSuccess"/>
+	<Transition type="error" FromActivity="Any" ToActivity="SetStatusToError"/>
+</Workflow>

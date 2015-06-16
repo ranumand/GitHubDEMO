@@ -1,0 +1,213 @@
+<rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+    <name>rb_mix_CheckCaseDescription</name>
+    <description lang="en">Check CheckCaseDescription</description>
+    <declare usage="input">
+        <var>Publish_GTIN</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>IS_PREVIOUS_CONFIRMED</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="local">
+        <var>HR_MC</var>
+        <link type="catalog">
+            <literal>HierarchyRoles</literal>
+            <literal>STATE/CONFIRMED</literal>
+        </link>
+    </declare>
+    <declare usage="local">
+        <var>IM_MC</var>
+        <link type="catalog">
+            <literal>ITEM_MASTER</literal>
+            <literal>STATE/CONFIRMED</literal>
+        </link>
+    </declare>
+    <declare usage="output">
+        <var>HierarchyStatus</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="local">
+        <var>temp_productid</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="input">
+        <var>VIPOperation</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="input">
+        <var>SubmissionReasonCode</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="input">
+        <var>PreviousHierarchyRolesStatus</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>PublishToItemAdapter</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="local">
+        <var>ConfirmedItem</var>
+        <datatype type="boolean"/>
+    </declare>
+    <declare usage="output">
+        <var>CurrentTimeStamp</var>
+        <datatype type="string"/>
+    </declare>
+    <constraint>
+        <name>CheckIfStraggler</name>
+        <description>This rule will check weather</description>
+        <usefor>
+            <var>HierarchyStatus</var>
+        </usefor>
+        <condition>
+            <and>
+                <eq>
+                    <var>CATALOG_NAME</var>
+                    <const type="string">ITEM_MASTER</const>
+                </eq>
+                <var>RECORD_IS_ROOT</var>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var/>
+                <table source="sql">
+                    <literal>HR_MC/ITEM_HIERARCHY_STATUS_CD</literal>
+                    <where type="SQL">
+                        <sql>
+                            <eq>
+                                <literal>HR_MC/PRODUCTID</literal>
+                                <var>PRODUCTID</var>
+                            </eq>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>CheckIfItemWasConfirmed</name>
+        <description>This rule will check weather item was confirmed</description>
+        <usefor/>
+        <condition>
+            <eq>
+                <var>CATALOG_NAME</var>
+                <const type="string">ITEM_MASTER</const>
+            </eq>
+        </condition>
+        <action>
+            <assign>
+                <var>temp_productid</var>
+                <table source="sql">
+                    <literal>IM_MC/PRODUCTID</literal>
+                    <where type="SQL">
+                        <sql>
+                            <eq>
+                                <literal>IM_MC/PRODUCTID</literal>
+                                <var>PRODUCTID</var>
+                            </eq>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>IsItemConfirmed</name>
+        <description>IsItemConfirmed</description>
+        <usefor>
+            <var>IS_PREVIOUS_CONFIRMED</var>
+        </usefor>
+        <condition>
+            <and>
+                <defined>
+                    <var>temp_productid</var>
+                </defined>
+                <eq>
+                    <var>HierarchyStatus</var>
+                    <const type="string">ENRICHMENT_COMPLETE</const>
+                </eq>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var>IS_PREVIOUS_CONFIRMED</var>
+                <const type="string">true</const>
+            </assign>
+            <assign>
+                <var>ConfirmedItem</var>
+                <const type="string">true</const>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>CheckPublishToItemAdapter</name>
+        <description>con4</description>
+        <usefor>
+            <var>PublishToItemAdapter</var>
+        </usefor>
+        <condition>
+            <or>
+                <and>
+                    <eq>
+                        <var>PreviousHierarchyRolesStatus</var>
+                        <const type="string">VIP_REVIEW</const>
+                    </eq>
+                    <eq>
+                        <var>HierarchyStatus</var>
+                        <const type="string">ENRICHMENT_COMPLETE</const>
+                    </eq>
+                </and>
+                <and>
+                    <eq>
+                        <var>VIPOperation</var>
+                        <const type="string">NEW</const>
+                    </eq>
+                    <eq>
+                        <var>HierarchyStatus</var>
+                        <const type="string">ENRICHMENT_COMPLETE</const>
+                    </eq>
+                </and>
+                <and>
+                    <eq>
+                        <var>ConfirmedItem</var>
+                        <const type="string">true</const>
+                    </eq>
+                    <gt>
+                        <op func="length"> <op func="trim"> <var>SubmissionReasonCode</var>
+                            </op>
+                        </op>
+                        <const type="number">0</const>
+                    </gt>
+                </and>
+            </or>
+        </condition>
+        <action>
+            <assign>
+                <var>PublishToItemAdapter</var>
+                <const type="string">true</const>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>AssignCurrentTimeStamp</name>
+        <description>AssignCurrentTimeStamp</description>
+        <usefor>
+            <var>CurrentTimeStamp</var>
+        </usefor>
+        <condition>
+            <eq>
+                <var>Publish_GTIN</var>
+                <var>GTIN</var>
+            </eq>
+        </condition>
+        <action>
+            <assign>
+                <var>CurrentTimeStamp</var>
+                <var>SESSION/timestamp</var>
+            </assign>
+        </action>
+    </constraint>
+</rulebase>

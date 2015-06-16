@@ -1,0 +1,34 @@
+<rulebase metaversion="0.1">
+	<name>rb_ConvertRecordKeyStringToArray</name>
+	<description>rb_ConvertRecordKeyStringToArray</description>
+	
+	<declare usage="input">
+		<var>RecordKeyString</var>
+	</declare>
+	
+	<declare usage="output">
+		<var>RecordKeyArray</var>
+		<datatype type="array"/>
+	</declare>
+	
+	<constraint>
+		<name>ConvertRecordKeyStringToArray</name>
+		<description>Convert record Keys string to array.</description>
+		<condition>
+			<defined>
+				<var>RecordKeyString</var>				
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>RecordKeyArray</var>
+				<op func="convertDelimitedStringToArray">
+					<var>RecordKeyString</var>
+					<const type="string">,</const>
+					<const type="string">RulebaseCustomFunctionHelper</const>
+                    <var>SESSION/ENTERPRISE_INTERNAL_NAME</var>
+				</op>
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

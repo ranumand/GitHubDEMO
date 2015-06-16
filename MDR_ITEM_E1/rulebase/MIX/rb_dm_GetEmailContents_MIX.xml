@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+	<name>rb_dm_GLENN_GetEmailContents</name>
+	<description>rb_dm_GLENN_GetEmailContents</description>
+
+	<declare usage="output">
+		<var>EventName</var>
+		<datatype type="string"/>
+	</declare>
+	
+	<declare usage="output">
+		<var>CEventId</var>
+		<!-- <datatype type="string"/> -->
+	</declare>
+	
+	<declare usage="input">
+		<var>CDocSubType</var>
+		<datatype type="string"/>
+	</declare>
+	
+	<constraint>
+		<name>GetEventName</name>
+		<description>Get event name</description>
+		<condition>
+			<defined>
+				<var>CDocSubType</var>
+			</defined>
+		</condition>	
+		<action>
+			<assign>
+				<var>EventName</var>
+				<op func="readEventDescFromTable">	
+					<var>CDocSubType</var> 
+				</op>	
+			</assign> 
+		</action>
+	</constraint>
+	
+	<!-- <constraint>
+		<name>GetCurEventID</name>
+		<description>GetCurEventID2</description>
+		<action>
+			<assign>
+				<var>CEventId</var>
+				<op func="readCurEventIdFromTable">	
+				</op>	
+			</assign> 
+		</action>
+	</constraint> -->
+	
+	
+</rulebase>

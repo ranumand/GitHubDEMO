@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+<!-- This Rulebase will gets the highest hierarhcy Designation
+-->
+
+  <name>fetchHighestHierarchyDesignation</name>
+  <description>Get highest hierarhcy Designation</description>
+  
+  
+  <declare usage="output">
+	<var>matchedLvItemId</var>
+	<datatype type="string"/>
+  </declare>
+  
+   <declare usage="output">
+	<var>lVDesignation</var>
+	<datatype type="string"/>
+  </declare>
+
+  <declare usage="input">
+	<var>matchedLvItemIdArray1</var>
+	<datatype type="array"/>
+  </declare>
+  
+  <declare usage="input">
+	<var>lVDesignationArray1</var>
+	<datatype type="array"/>
+  </declare>
+  
+  <declare usage="input">
+	<var>incomingHrchy1</var>
+	<datatype type="string"/>
+  </declare>
+  <declare usage="input">
+	<var>incomingHrchy2</var>
+	<datatype type="string"/>
+  </declare>
+  <declare usage="input">
+	<var>incomingHrchy3</var>
+	<datatype type="string"/>
+  </declare>
+  <declare usage="input">
+	<var>incomingHrchy4</var>
+	<datatype type="string"/>
+  </declare>
+   <declare usage="input">
+	<var>incomingHrchy5</var>
+	<datatype type="string"/>
+  </declare>
+   <declare usage="input">
+	<var>incomingHrchy6</var>
+	<datatype type="string"/>
+  </declare>
+   <declare usage="input">
+	<var>incomingHrchy7</var>
+	<datatype type="string"/>
+  </declare>
+   <declare usage="input">
+	<var>incomingHrchy8</var>
+	<datatype type="string"/>
+  </declare>
+   <declare usage="input">
+	<var>incomingHrchy9</var>
+	<datatype type="string"/>
+  </declare>
+   <declare usage="input">
+	<var>incomingHrchyNxt</var>
+	<datatype type="string"/>
+  </declare>
+   <declare usage="input">
+	<var>incomingHrchyanotherNxt</var>
+	<datatype type="string"/>
+  </declare>
+  
+ <constraint>
+    <name>getMatchingLVitem</name>
+    <description>Check if GTIN exist in PID as LV</description>
+    <condition>
+        <defined>
+          <var>matchedLvItemIdArray1</var>
+        </defined>
+    </condition>
+    <action>
+		<assign>
+				<var>matchedLvItemId</var>
+				<op func="getHighestDesignation">
+					<var>lVDesignationArray1</var>
+					<var>matchedLvItemIdArray1</var>
+					<const type="string">LVID</const>
+					<var>incomingHrchy1</var>
+					<var>incomingHrchy2</var>
+					<var>incomingHrchy3</var>
+					<var>incomingHrchy4</var>
+					<var>incomingHrchy5</var>
+					<var>incomingHrchy6</var>
+					<var>incomingHrchy7</var>
+					<var>incomingHrchy8</var>
+					<var>incomingHrchy9</var>
+					<var>incomingHrchyNxt</var>
+					<var>incomingHrchyanotherNxt</var>
+				</op>
+		</assign>
+		<assign>
+				<var>lVDesignation</var>
+				<op func="getHighestDesignation">
+					<var>lVDesignationArray1</var>
+					<var>matchedLvItemIdArray1</var>
+					<const type="string">DESIGNATION</const>
+					<var>incomingHrchy1</var>
+					<var>incomingHrchy2</var>
+					<var>incomingHrchy3</var>
+					<var>incomingHrchy4</var>
+					<var>incomingHrchy5</var>
+					<var>incomingHrchy6</var>
+					<var>incomingHrchy7</var>
+					<var>incomingHrchy8</var>
+					<var>incomingHrchy9</var>
+					<var>incomingHrchyNxt</var>
+					<var>incomingHrchyanotherNxt</var>
+				</op>
+		</assign>
+	</action>
+  </constraint>
+</rulebase>

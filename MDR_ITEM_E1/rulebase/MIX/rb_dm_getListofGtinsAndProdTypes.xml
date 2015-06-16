@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+	
+<rulebase metaversion="1.0">
+	<name>GetListOfGtinsAndProdTypes</name>
+	<description>Get List of GITNs and it's corresponding product types</description>
+    <declare usage="input">
+		<var>AllGTINS</var>
+	    <datatype type="array" />
+	</declare>
+	<declare usage="output">
+		<var>listOfGtins</var>
+	    <datatype type="array" />
+	</declare>
+	<declare usage="output">
+		<var>listOfProductType</var>
+        <datatype type="array" />		
+	</declare>	
+
+	<constraint>
+		<name>GetItemMasterGTIN</name>
+		<description>Get Item Master GTN</description>
+		<condition>
+		<and>
+			<eq>				
+				<var>CATALOG_NAME</var>
+                <const type="string" >ITEM_MASTER</const>				
+			</eq>
+			<in>
+			   <var>GTIN</var>
+			  <var>AllGTINS</var>
+			</in>
+			
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>listOfGtins</var>
+				<var>GTIN</var>
+			</assign>
+			<assign>
+				<var>listOfProductType</var>
+				<var>PRODUCTTYPE</var>
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

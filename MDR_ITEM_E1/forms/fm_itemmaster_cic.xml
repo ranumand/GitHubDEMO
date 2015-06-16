@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Form>
+	
+	<Field>
+        <ID>ProductId</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem/PartNumber/GlobalPartNumber/ProdID/ExternalKey/Attribute[@name='PRODUCTID']/Value/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='ProductId'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+	
+	<Field>
+        <ID>PRODUCTDBID</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem/PartNumber/GlobalPartNumber/ProdID/DBID/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='PRODUCTDBID'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+	<Field>
+        <ID>PRODUCTDBID1</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem/@key/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='PRODUCTDBID'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+	<Field>
+        <ID>ProductId1</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='ProductId1'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+	<Field>
+        <ID>MasterCatalogDBID</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='MasterCatalogDBID'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+	<Field>
+        <ID>MasterCatalogDBID2</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem/MasterCatalog/RevisionID/DBID/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='MasterCatalogDBID2'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+	<Field>
+        <ID>MasterCatalogDBID1</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogReference/RevisionID/DBID/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='MasterCatalogDBID1'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+	<Field>
+        <ID>VENUS_RSN</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='Venus_Reason']/Value</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='VENUS_RSN'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>
+		
+</Form>

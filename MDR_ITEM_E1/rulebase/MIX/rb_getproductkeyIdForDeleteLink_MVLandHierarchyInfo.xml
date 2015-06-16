@@ -1,0 +1,106 @@
+<rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+    <name>rb_getproductkeyIdForDeleteLink_MVLandHierarchyInfo.xml</name>
+    <description lang="en">Create Array for fetch productkeyids Delete Link_MVL and HierarchyInfo Records</description>
+    <declare usage="local">
+        <var>cat_IM</var>
+        <link type="catalog">
+            <literal>ITEM_MASTER</literal>
+            <literal>STATE/UNCONFIRMED</literal>
+        </link>
+    </declare>
+    <declare usage="local">
+        <var>cat_HRole</var>
+        <link type="catalog">
+            <literal>HierarchyRoles</literal>
+            <literal>STATE/CONFIRMED</literal>
+        </link>
+    </declare>
+    <declare usage="output">
+        <var>ARR_HRoles_PROD_KEY_ID</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="output">
+        <var>ARR_IM_PRODUCTID</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="local">
+        <var>ARR_HRoles_PROD_KEY_ID1</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="input">
+        <var>Item_MasterRecordKey</var>
+        <datatype type="array"/>
+    </declare>
+    <constraint>
+        <name>getItemMasterProductid</name>
+        <description>getItemMasterProductid</description>
+        <usefor/>
+        <condition>
+            <defined>
+                <var>Item_MasterRecordKey</var>
+            </defined>
+        </condition>
+        <action>
+            <assign>
+                <var>ARR_IM_PRODUCTID</var>
+                <table distinct="true" source="sql">
+                    <literal>cat_IM/PRODUCTID</literal>
+                    <where type="SQL">
+                        <sql>
+                            <in>
+                                <literal>cat_IM/PRODUCTKEYID</literal>
+                                <var>Item_MasterRecordKey</var>
+                            </in>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>getLinkMVLProductkeyids</name>
+        <description>getLinkMVLProductkeyids</description>
+        <usefor/>
+        <condition>
+            <defined>
+                <var>ARR_IM_PRODUCTID</var>
+            </defined>
+        </condition>
+        <action>            
+            <assign>
+                <var>ARR_HRoles_PROD_KEY_ID1</var>
+                <table distinct="true" source="sql">
+                    <literal>cat_HRole/PRODUCTKEYID</literal>
+                    <where type="SQL">
+                        <sql>
+                            
+                                <in>
+                                    <literal>cat_HRole/PRODUCTID</literal>
+                                    <var>ARR_IM_PRODUCTID</var>
+                                </in>
+                           
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>removenullfromHRoles</name>
+        <description>removenullfromHRoles</description>
+        <usefor/>
+        <condition>
+            <defined>
+                <op func="strip"> <var>ARR_HRoles_PROD_KEY_ID1</var>
+                </op>
+            </defined>
+        </condition>
+        <action>
+            <assign>
+                <var>ARR_HRoles_PROD_KEY_ID</var>
+                <op func="strip"> <var>ARR_HRoles_PROD_KEY_ID1</var>
+                </op>
+            </assign>
+        </action>
+    </constraint>    
+</rulebase>

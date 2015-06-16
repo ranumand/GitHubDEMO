@@ -1,0 +1,446 @@
+<?xml version="1.0"?>
+<Workflow Version="1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="Workflow.xsd">
+	<Owner>TIBCO</Owner>
+	<Name>wf_HierarchyOrchestration</Name>
+	<Description>Save the attributes in Hierarchy Orchestration repository</Description>
+	<Parameter name="Environment_Name4" direction="in" type="string" eval="variable">Environment_Name1</Parameter>
+	<Parameter direction="in" name="inDoc" type="document" eval="variable">1</Parameter>
+	<Parameter direction="out" name="errorFlag" type="boolean" eval="variable">errorFlag</Parameter>
+	<Parameter direction="out" name="ParentGTIN" type="string" eval="variable">ParentGTIN1</Parameter>
+
+	<Activity Name="StartOrchestration">
+		<Start/>
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Initialize event info</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">START</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>		
+	</Activity>
+	<Activity Name="SaveRecordAsUnConfirmed">
+		<Action>SaveRecord</Action>
+		<Description lang="en">Create new versions of records in Hierarchy Orchestration</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SAVERECORD</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="GenerateExistenceError" type="string" eval="constant">false</Parameter>
+		<Parameter direction="in" name="RetainExistingRelationships" type="boolean" eval="constant">TRUE</Parameter>
+		<Parameter direction="in" name="OverrideConflict" type="boolean" eval="constant">TRUE</Parameter>			
+		<Parameter direction="in" name="Status" type="string" eval="constant">UNCONFIRMED</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>		
+		<Parameter direction="in" name="Severity" type="long" eval="constant">0</Parameter>
+		<Parameter direction="in" eval="constant" name="Overwrite" type="boolean">true</Parameter>
+		<Parameter direction="in" name="Rulebase" type="string" eval="constant">standard/rulebase/rbgenerateid.xml</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsAttempted">recordsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsWithErrors">errorsFound</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsWithWarnings">warningsFound</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="GetProductInfo2">
+		<Action>VerifyRecordStatus</Action>
+		<Description lang="en">Populate CIN reference value in repository</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GETPRODUCTINFO</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Agency">SOURCE</Parameter>
+		<Parameter direction="in" eval="rule" source="Repository Selection" type="string" name="MasterCatalog">workDoc</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="OriginalDocID" source="//catalogueItemNotificationIdentification/uniqueCreatorIdentification/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="ManageRecordCollection">
+		<Action>ManageRecordCollection</Action>
+		<Description lang="en">Construct record list</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYVERSION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter>
+		<Parameter direction="in" name="SetRecordListReadOnly" type="boolean" eval="constant">false</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">initialRecordList</Parameter>
+		<Parameter direction="in" name="BundlingOption" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">false</Parameter>
+	</Activity>		
+	<Activity Name="ConvertRecordsToOutputFormat1Sync">
+		<Action>ConvertRecordToOutput</Action>
+		<Description lang="en">Convert records to output format</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CONVERTTOOUTPUT</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">initialRecordList</Parameter>
+		<Parameter direction="in" name="CatalogOutputMap" type="string" eval="constant">HIERARCHY_ORCHESTR_OM</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">mcRecordList</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+	</Activity>	
+	<Activity Name="IdentifyProtocolOperationsForAccept">
+		<Action>IdentifyProtocolOperations</Action>
+		<Description lang="en">Identify operations to be performed for each record</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">pl1</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="ACCEPT_FLAG" type="string" eval="constant">TRUE</Parameter>
+		<Parameter direction="in" name="DATAPOOL_ID" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="in" name="BUYER_ID" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Organization/PartyID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList1</Parameter>
+		<Parameter direction="out" name="AsyncStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYOPERATION</Parameter>
+	</Activity>	
+	<Activity Name="HandleMessagingDataPoolsForAccept">
+		<Action>HandleProtocolMessaging</Action>
+		<Description lang="en">Begin sending accept message</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CREATEMESSAGE</Parameter>
+		<Parameter direction="in" name="CommandsPerMessage" type="long" eval="constant">50</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ResponseRequired" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" name="ProtocolMessagingCommand" type="string" eval="variable">nextCmd</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList1</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList2</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">messageDoc</Parameter>
+		<Parameter direction="out" name="ProtocolMessagingNextCommand" type="string" eval="variable">nextCmd</Parameter>
+		<Parameter direction="out" name="ProtocolMessageGenerated" type="boolean" eval="variable">msgGenerated</Parameter>
+	</Activity>
+	<Activity Name="TranslateAcceptMessageFor1Sync">
+		<Action>Translate</Action>
+		<Description lang="en">Generate the accept message</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TRANSLATE</Parameter>
+		<Parameter direction="in" name="Derived" type="string" eval="constant">false</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Translator">XSLT</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Map">MDRITME1/maps/HierarchyOrchestration/1syncCIC_HierarchyOrchestration.xsl</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="OutputFormat">XML</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Normalize">None</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">messageDoc</Parameter>
+		<Parameter name="Xsl_Param_Environment_Name" direction="in" eval="variable" type="string">Environment_Name4</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">syncDoc</Parameter>
+	</Activity>
+	<Activity Name="SendAcceptTo1Sync">
+		<Action>SendProtocolMessage</Action>
+		<Description>Send accept message to 1Sync</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDMESSAGE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="BizProtocol">JMS</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">syncDoc</Parameter>
+		<Parameter direction="in" name="SupplierCredential" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Credential[@domain='GLN']/Identity/text()">workDoc</Parameter>
+		<Parameter direction="in" name="SenderCredential" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text()">workDoc</Parameter>
+		<Parameter direction="in" name="ChannelCredential" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text()">workDoc</Parameter>
+		<Parameter direction="in" name="ChannelOrganizationName" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">workDoc</Parameter>
+		<Parameter direction="in" name="MessageID1" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/PackageData/@messageID" type="string" eval="xpath">messageDoc</Parameter>
+		<Parameter direction="in" type="boolean" eval="constant" name="TrackMessageResponse">false</Parameter>
+		<Parameter direction="out" name="OutDocument" eval="variable" type="document">responseDoc</Parameter>
+	</Activity>		
+	<Activity Name="CheckForMoreAcceptMessages">
+		<Action>NoOperation</Action>
+		<Description lang="en">Check if more accept messages need to be sent</Description>
+	</Activity>
+	<Activity Name="AcceptSent">
+		<Action>NoOperation</Action>
+		<Description lang="en">Accept confirmation received</Description>
+	</Activity>
+	<Activity Name="SetStatusCodeToAccept">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Set Status code to Accept in Hierarchy Orchestration Repository</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="Rulebase" eval="constant" type="string">MDRITME1/rulebase/HierarchyOrchestration/rb_setStatusCode.xml</Parameter>		
+		<Parameter name="StatusCode" direction="in" eval="constant" type="string">CIC_ACCEPT</Parameter>
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">SAVE</Parameter>
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+	</Activity>
+	<Activity Name="CheckCINMessageType">
+		<Action>NoOperation</Action>
+		<Description lang="en">Check for CIN Message </Description>
+	</Activity>
+	<Activity Name="CICReviewForNewOperation">
+		<Action>NoOperation</Action>
+		<Description lang="en">CIC Review For New Operation</Description>
+		<Parameter direction="in" type="string" eval="constant" name="CICReviewMessage">The Kroger Family Tree class attached to this item is currently assigned to the data migration process.  During this process, only existing items can be accepted if submitted in VIP as an Initial Load.  NEW items cannot be accepted until the completion of the migration step.</Parameter>
+	</Activity>
+	<Activity Name="CICReviewForPLVNotExists">
+		<Action>NoOperation</Action>
+		<Description lang="en">CIC Review For New Operation</Description>
+		<Parameter direction="in" type="string" eval="constant" name="CICReviewMessage">The item was submitted as a publication type of INITIAL LOAD. This item is not currently active in the Kroger Family of Stores and needs to be submitted as a publication type of NEW in order to be processed</Parameter>
+	</Activity>
+	<Activity Name="MatchPLVinItemMasterPIDDataSource">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Match the PLV in Item Master PID data Source</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" eval="constant" type="string">EVALUATERULEBASE</Parameter>			
+		<Parameter direction="in" name="Rulebase" type="string" eval="constant">MDRITME1/rulebase/HierarchyOrchestration/rb_CheckPLVinIMPIDDataSource.xml</Parameter>
+		<Parameter direction="in" name="itemsInHierarchy" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='HierarchyOrchestrationIds']/Value/text()">workDoc</Parameter>
+		<Parameter name="Severity" direction="in" eval="constant" type="long">9</Parameter>
+		<Parameter name="SaveFlag" direction="in" eval="constant" type="string">NOSAVE</Parameter>
+		<Parameter direction="in" name="ExecutionMode" type="string" eval="constant">NoRecords</Parameter>
+		<Parameter name="isGTINExistAsPIDPLV" direction="out" eval="variable" type="string">isGTINExistAsPIDPLV</Parameter>
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordsAsConfirmed">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set the record status as Confirmed</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>		
+		<Parameter direction="out" name="CommandStatus" type="string" eval="variable">commandStatus</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="StepID">update_step</Parameter>
+	</Activity>
+	<Activity Name="ManageRecordCollectionForReview">
+		<Action>ManageRecordCollection</Action>
+		<Description lang="en">Construct record list</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYVERSION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter>
+		<Parameter direction="in" name="SetRecordListReadOnly" type="boolean" eval="constant">false</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">ReviewRecordList</Parameter>
+		<Parameter direction="in" name="BundlingOption" type="boolean" eval="constant">true</Parameter>		
+	</Activity>	
+	<Activity Name="ConvertRecordsToOutputFormatCICReview">
+		<Action>ConvertRecordToOutput</Action>
+		<Description lang="en">Convert records to output format</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CONVERTTOOUTPUT</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">ReviewRecordList</Parameter>
+		<Parameter direction="in" name="CatalogOutputMap" type="string" eval="constant">HIERARCHY_ORCHESTR_OM</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList3</Parameter>
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">mc1RecordList</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl2</Parameter>
+	</Activity>	
+	<Activity Name="IdentifyProtocolOperationsFor1SyncCICReview">
+		<Action>IdentifyProtocolOperations</Action>
+		<Description>Identify operations to be performed for each record</Description>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="ReferenceStepID" direction="in" type="long" eval="variable">pl2</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordList3</Parameter>
+		<Parameter name="REVIEW_FLAG" direction="in" type="string" eval="constant">TRUE</Parameter>
+		<Parameter name="DATAPOOL_ID" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@origin='Receiver']/Organization/PartyID/DBID/text()">workDoc</Parameter>
+		<Parameter name="BUYER_ID" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@origin='Receiver']/Organization/PartyID/DBID/text()">workDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">IDENTIFYOPERATION</Parameter>
+		<Parameter name="OutRecordList" direction="out" eval="variable" type="recordlist">workRecordList4</Parameter>
+		<Parameter name="AsyncStepID" direction="out" eval="variable" type="long">prlog3</Parameter>
+	</Activity>	
+	<Activity Name="HandleProtocolMessageFor1syncCICReview">
+		<Action>HandleMessaging</Action>
+		<Description>Begin sending Review message</Description>	
+		<Parameter name="eventState" direction="in" type="string" eval="constant">CREATEMESSAGE</Parameter>
+		<Parameter name="CommandsPerMessage" direction="in" type="long" eval="constant">1</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="ResponseRequired" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="ProtocolMessagingCommand" direction="in" type="string" eval="variable">nextCmd1</Parameter>
+		<Parameter name="ReferenceStepID" direction="in" type="long" eval="variable">prlog3</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordList4</Parameter>
+		<Parameter name="OutRecordList" direction="out" eval="variable" type="recordlist">workRecordList5</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">messageDoc</Parameter>
+		<Parameter name="ProtocolMessagingNextCommand" direction="out" eval="variable" type="string">nextCmd1</Parameter>
+		<Parameter name="ProtocolMessageGenerated" direction="out" eval="variable" type="boolean">msgGenerated</Parameter>
+	</Activity>	
+	<Activity Name="TranslateActivityToConvertToCICReviewFormat">
+		<Action>Translate</Action>
+		<Description lang="en">Generate the Review message</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TRANSLATE</Parameter>
+		<Parameter direction="in" name="Derived" type="string" eval="constant">false</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Translator">XSLT</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Xsl_Param_CICCode">CIC999</Parameter>
+		<Parameter direction="in" eval="variable" type="string" name="Xsl_Param_CICDescription">CICReviewMessage</Parameter>		
+		<Parameter name="Xsl_Param_Environment_Name" direction="in" eval="variable" type="string">Environment_Name4</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Map">MDRITME1/maps/HierarchyOrchestration/1syncCIC_HierarchyOrchestration.xsl</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="OutputFormat">XML</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Normalize">None</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">messageDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">syncDoc</Parameter>
+	</Activity>
+	<Activity Name="Publish1SyncCICReviewMessage">
+		<Action>SendProtocolMessage</Action>
+		<Description>Publish the 1Sync CIC Review Message to JMS</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">syncDoc</Parameter>
+		<Parameter name="SupplierCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Credential[@domain='GLN']/Identity/text()">workDoc</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text()">workDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text()">workDoc</Parameter>
+		<Parameter name="ChannelOrganizationName" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">workDoc</Parameter>
+		<Parameter name="MessageID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/PackageData/@messageID">messageDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDMESSAGE</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">responseDoc</Parameter>
+	</Activity>
+	<Activity Name="CheckForMorReviewMessages">
+		<Action>NoOperation</Action>
+		<Description>Check if more review messages need to be sent</Description>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="SetStatusCodeToReview">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Set Status code to Review</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<Parameter direction="in" name="Rulebase" eval="constant" type="string">MDRITME1/rulebase/HierarchyOrchestration/rb_setStatusCode.xml</Parameter>				
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="StatusCode" direction="in" eval="constant" type="string">CIC_REVIEW</Parameter>
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">SAVE</Parameter>
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+	</Activity>	
+	<Activity Name="HierarchyOrchestrationComplete">
+		<Action>NoOperation</Action>
+		<Description lang="en">Hierarchy Orchestration is completed</Description>
+	</Activity>
+	<Activity Name="RejectDueToWorkflowError">
+		<Action>Send</Action>
+		<Description lang="en">Error occurred during work flow processing</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">REJECTDUETOWFERROR</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="long" name="Address">workDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailProductEditWorkflowError</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Form">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event status to Error/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">ERROR</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+		<Parameter direction="in" name="errorFlag" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="ParentGTIN" direction="in" type="string" eval="xpath"  source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[LineNumber= 1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">workDoc</Parameter>
+	</Activity>	
+
+	<Transition FromActivity="StartOrchestration" ToActivity="SaveRecordAsUnConfirmed"/>
+	<Transition FromActivity="SaveRecordAsUnConfirmed" ToActivity="GetProductInfo2"/>
+	<Transition FromActivity="GetProductInfo2" ToActivity="ManageRecordCollection"/>
+	<Transition FromActivity="ManageRecordCollection" ToActivity="ConvertRecordsToOutputFormat1Sync"/>		
+	<Transition FromActivity="ConvertRecordsToOutputFormat1Sync" ToActivity="IdentifyProtocolOperationsForAccept"/>
+	<Transition FromActivity="IdentifyProtocolOperationsForAccept" ToActivity="HandleMessagingDataPoolsForAccept"/>
+	<Transition FromActivity="HandleMessagingDataPoolsForAccept" ToActivity="AcceptSent">
+		<Description>If no message was generated and the next command from handle messaging is DONE, then mark event done.</Description>
+		<Rule>
+			<Parameter direction="in" name="msgFound" eval="variable" type="boolean">msgGenerated</Parameter>
+			<Parameter direction="in" name="state" type="string" eval="variable">nextCmd</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Done</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCaseAndBooleanIsFalse(msgFound, state, inputParamString);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="HandleMessagingDataPoolsForAccept" ToActivity="HandleMessagingDataPoolsForAccept">
+		<Description>This transition should never be executed if the restart mechanism works correctly, putting this in to safeguard against false restarts by response handlers.</Description>
+		<Rule>
+			<Parameter direction="in" name="msgFound" eval="variable" type="boolean">msgGenerated</Parameter>
+			<Parameter direction="in" name="state" type="string" eval="variable">nextCmd</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">SUSPEND</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCaseAndBooleanIsFalse(msgFound, state, inputParamString);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="HandleMessagingDataPoolsForAccept" ToActivity="TranslateAcceptMessageFor1Sync"/>		
+	<Transition FromActivity="TranslateAcceptMessageFor1Sync" ToActivity="SendAcceptTo1Sync"/>		 
+	<Transition FromActivity="SendAcceptTo1Sync" ToActivity="CheckForMoreAcceptMessages"/>
+	<Transition FromActivity="CheckForMoreAcceptMessages" ToActivity="HandleMessagingDataPoolsForAccept">
+		<Description>If we are done, then move to Completion.</Description>
+		<Rule>
+			<Parameter direction="in" name="state" type="string" eval="variable">nextCmd</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Suspend</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsIgnoringCase(state, inputParamString);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckForMoreAcceptMessages" ToActivity="AcceptSent"/>
+	<Transition FromActivity="AcceptSent" ToActivity="SetStatusCodeToAccept"/>
+	<Transition FromActivity="SetStatusCodeToAccept" ToActivity="CheckCINMessageType"/>	
+	<Transition FromActivity="CheckCINMessageType" ToActivity="CICReviewForNewOperation">
+		<Description>Go to SendCICReview when operation is  NEW</Description>
+		<Rule>
+			<Parameter name="operation" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" direction="in">workDoc</Parameter>
+			<Parameter direction="in" name="inputParamString1" eval="constant" type="string">NEW</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+				result = operation.equalsIgnoreCase(inputParamString1);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CICReviewForNewOperation" ToActivity="ManageRecordCollectionForReview"/>	
+	<Transition FromActivity="CheckCINMessageType" ToActivity="UpdateRecordsAsConfirmed">
+		<Description>Confirm the records when operation is Delete</Description>
+		<Rule>
+			<Parameter name="operation" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" direction="in">workDoc</Parameter>
+			<Parameter direction="in" name="inputParamString1" eval="constant" type="string">DELETE</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+				result = operation.equalsIgnoreCase(inputParamString1);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckCINMessageType" ToActivity="MatchPLVinItemMasterPIDDataSource">
+		<Description>Check PLV in Item Master Data Source when Operation is Modify/InitialLoad/Correction</Description>
+		<Rule>
+			<Parameter name="operation" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" direction="in">workDoc</Parameter>
+			<Parameter direction="in" name="inputParamString3" eval="constant" type="string">INITIALLOAD</Parameter>
+			<Parameter direction="in" name="inputParamString4" eval="constant" type="string">CORRECTION</Parameter>
+			<Parameter direction="in" name="inputParamString5" eval="constant" type="string">MODIFY</Parameter>
+
+			<Parameter name="result" type="boolean" direction="out"/>
+
+			<Condition format="bsh">
+				<![CDATA[
+				result = ((operation.equalsIgnoreCase(inputParamString3)) || (operation.equalsIgnoreCase(inputParamString4)) || (operation.equalsIgnoreCase(inputParamString5)) );
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="MatchPLVinItemMasterPIDDataSource" ToActivity="CICReviewForPLVNotExists">
+		<Description lang="en">Go to SendCICReview when no items in hierarchy matches PLV in Item Master Data Source</Description>
+		<Rule>
+			<Parameter name="PLVExistance" direction="in" eval="variable" type="string">isGTINExistAsPIDPLV</Parameter>
+			<Parameter direction="out" name="result" type="boolean"/>
+			<Condition format="bsh">
+				<![CDATA[
+					result = ((PLVExistance == null || !PLVExistance.contains("True")));
+					]]>
+			</Condition>
+		</Rule>
+	</Transition>	
+	<Transition FromActivity="CICReviewForPLVNotExists" ToActivity="ManageRecordCollectionForReview"/>
+	<Transition FromActivity="ManageRecordCollectionForReview" ToActivity="ConvertRecordsToOutputFormatCICReview"/>
+	<Transition FromActivity="ConvertRecordsToOutputFormatCICReview" ToActivity="IdentifyProtocolOperationsFor1SyncCICReview"/>
+	<Transition FromActivity="IdentifyProtocolOperationsFor1SyncCICReview" ToActivity="HandleProtocolMessageFor1syncCICReview"/>
+	<Transition FromActivity="HandleProtocolMessageFor1syncCICReview" ToActivity="TranslateActivityToConvertToCICReviewFormat"/>
+	<Transition FromActivity="TranslateActivityToConvertToCICReviewFormat" ToActivity="Publish1SyncCICReviewMessage"/>
+	<Transition FromActivity="Publish1SyncCICReviewMessage" ToActivity="CheckForMorReviewMessages"/>
+	<Transition FromActivity="CheckForMorReviewMessages" ToActivity="HandleProtocolMessageFor1syncCICReview">
+		<Description>Check for more review messages</Description>
+		<Rule>
+			<Parameter name="state" type="string" direction="in" eval="variable">nextCmd</Parameter>
+			<Parameter name="inputParamString" type="string" direction="in" eval="constant">Suspend</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsIgnoringCase(state, inputParamString);]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckForMorReviewMessages" ToActivity="SetStatusCodeToReview"/>	
+	<Transition FromActivity="SetStatusCodeToReview" ToActivity="UpdateRecordsAsConfirmed"/>	
+	<Transition FromActivity="MatchPLVinItemMasterPIDDataSource" ToActivity="UpdateRecordsAsConfirmed"/>	
+	<Transition FromActivity="UpdateRecordsAsConfirmed" ToActivity="HierarchyOrchestrationComplete"/>
+	<!-- ERROR Handling Transitions -->
+	<Transition type="error" FromActivity="Any" ToActivity="SetStatusToError"/>	
+	<Transition FromActivity="SetStatusToError" ToActivity="RejectDueToWorkflowError"/> 
+</Workflow>
+
+
+
+
+
+

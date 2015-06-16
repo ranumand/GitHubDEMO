@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="0.1">
+<!-- This rulebase will check if there is any Family tree class cd has status under conversion -->
+	
+	<name>checkForConversion</name>			
+	<description>check for Conversion</description>
+
+	<declare usage="output">
+		<var>Environment_Name</var>
+	</declare>
+	
+	<declare usage="output">
+		<var>Skip_Cyclic_Chk_Env_Name</var>
+	</declare>		
+
+	<constraint>
+		<name>EnvironmentName</name>
+		<description>Environment Name</description>
+
+		<action>
+			<assign>
+				<var>Environment_Name</var>					
+					<op func="getEnviromentName">
+						<const type="string">ENVIORNMENT_NAME</const>						
+					</op>			
+			</assign>
+						
+		</action>
+	</constraint>
+	
+	<constraint>
+		<name>EnvironmenttoSkipCyclicCheck</name>
+		<description>Environment to skip cyclic check</description>
+
+		<action>
+			<assign>
+				<var>Skip_Cyclic_Chk_Env_Name</var>					
+					<op func="getEnviromentName">
+					<const type="string">ENVIORNMENT_PROD</const>						
+					</op>				
+			</assign>
+		</action>
+	</constraint>
+	
+</rulebase>

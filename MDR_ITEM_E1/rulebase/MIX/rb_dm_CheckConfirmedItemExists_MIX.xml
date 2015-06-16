@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+<name>Catalog Validations</name>
+<description>Catalog Validations</description>
+<!-- ITEM_EXISTS Flag -->
+<declare usage="output">
+	<var>ITEM_EXISTS_FLAG1</var>
+	<datatype type="array"/>
+</declare>
+
+
+
+<!-- Get the privious version of record MDM -->
+<constraint>
+	<name>CheckPreviousItemExistsInMDM</name>
+	<description>CheckPreviousItemExistsInMDM</description>
+	<condition>
+		<and>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+			<defined>
+				<var>GTIN</var>
+			</defined>
+			<defined>
+				<var>PREVIOUS_VERSION/RECORD_ACTIVE_FLAG</var>
+			</defined>
+			<eq>
+				<var>PREVIOUS_VERSION/RECORD_ACTIVE_FLAG</var>
+				<const type="string">Y</const>
+			</eq>		
+		</and>
+	</condition> 
+
+	<action>
+		<assign>
+			<var>ITEM_EXISTS_FLAG1</var>
+			<const type="string">True</const>
+		</assign>
+	</action>
+</constraint>
+
+<!-- Get the privious version of record MDM -->
+<constraint>
+	<name>CheckPreviousItemNotDefinedInMDM</name>
+	<description>CheckPreviousItemNotDefinedInMDM</description>
+	<condition>
+		<and>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+			<defined>
+				<var>GTIN</var>
+			</defined>
+			<undefined>
+				<var>PREVIOUS_VERSION/RECORD_ACTIVE_FLAG</var>
+			</undefined>					
+		</and>
+	</condition>
+	<action>
+		<assign>
+			<var>ITEM_EXISTS_FLAG1</var>
+			<const type="string">False</const>
+		</assign>
+	</action>
+</constraint>
+
+<constraint>
+	<name>CheckPreviousItemDeletedInMDM</name>
+	<description>CheckPreviousItemDeletedInMDM</description>
+	<condition>
+		<and>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+			<defined>
+				<var>GTIN</var>
+			</defined>
+			<eq>
+				<var>PREVIOUS_VERSION/RECORD_ACTIVE_FLAG</var>
+				<const type="string">N</const>
+			</eq>		
+		</and>
+	</condition> 
+
+	<action>
+		<assign>
+			<var>ITEM_EXISTS_FLAG1</var>
+			<const type="string">False</const>
+		</assign>
+	</action>
+</constraint>
+
+</rulebase>

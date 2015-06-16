@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will gets the highest hierarhcy Designation-->
+	<name>rb_checkforDynamicAssortmentforBaseUnit</name>
+	<description>Check Corporate Avg list cost for dynamic assortment</description>
+	<declare usage="input">
+		<var>DynamicAssortment_pv_gtin</var>
+	</declare>
+	<declare usage="input">
+		<var>INITIALCORPORATEAVGLISTCOST1</var>
+		<datatype type="number"/>
+	</declare>
+	<declare usage="input">
+		<var>Publish_GTIN</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="input">
+		<var>operationtype</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="output">
+		<var>reviewmsg</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="local">
+		<var>corporateaveragelistcost</var>
+		<link type="catalog">
+			<literal>CORPORATE_AVERAGE_LIST_COST</literal>
+			<literal>STATE/UNCONFIRMED</literal>
+		</link>
+	</declare>
+
+
+	<!--
+condition : The dynamic assortment sales variants do not have the same cost
+
+message : Cost (Initial corporate average list cost) cannot be different for the contained Sales Variants (SV) for a Dynamic assortment hierarchy. Please review and resubmit the hierarchy (<Pub GTIN>) after correcting.
+
+-->
+
+	<constraint>
+		<name>checkbaseunitaveragelistcost</name>
+		<description>if all base unit corporate average list cost are same or not</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<eq>
+					<var>ISBASEUNIT</var>                                                                                
+					<const type="string">TRUE</const>                                                        
+				</eq>                                                  				
+				<defined>
+					<var>INITIALCORPORATEAVGLISTCOST1</var>                 
+				</defined>
+				<defined>
+					<var>DynamicAssortment_pv_gtin</var>                                                             
+				</defined>
+				<neq>
+					<var>INITIALCORPORATEAVGLISTCOST1</var>  
+					<table source="sql">
+						<literal>corporateaveragelistcost/INITIALCORPORATEAVGLISTCOST</literal>
+						<where type="SQL">
+							<sql>
+								<and>
+									<eq>
+										<literal>corporateaveragelistcost/PRODUCTID</literal>
+										<var>Publish_GTIN</var>
+									</eq>
+									<eq>
+										<literal>corporateaveragelistcost/PRODUCTIDEXT</literal>
+										<var>PRODUCTID</var>
+									</eq>
+								</and>
+							</sql>
+						</where>
+					</table>
+				</neq>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>reviewmsg</var>
+				<op func="concat">
+					<const type="string">Cost (Initial corporate average list cost) at Base unit level cannot be different for a Dynamic assortment hierarchy. Please review and resubmit the hierarchy (</const>      
+					<var>Publish_GTIN</var>
+					<const type="string">) with the original operation type (</const>
+					<var>operationtype</var>
+					<const type="string">) after correcting.</const>              
+				</op>                                                    
+			</assign>
+		</action>
+	</constraint>
+
+
+</rulebase>

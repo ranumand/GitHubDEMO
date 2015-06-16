@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+	<name>SetItemStatus</name>
+	<description>Set Item Status</description>
+	<declare usage ="input">
+		<var>STATUS_INP</var>  
+	</declare>
+	<declare usage ="input">
+		<var>Desc1</var>
+	</declare>
+	<declare usage ="output">
+		<var>Desc2</var>  
+	</declare>
+	<declare>
+		<var>ITEM_MASTER_PARENT</var>
+		<link type="relationship_record">
+			<literal>ContainedBy</literal>
+		</link>
+	</declare>
+	<constraint>
+		<name>setWorkflowItemStatus</name>
+		<description>Set Workflow status</description>
+		<condition>
+			<and>
+				<and>	
+					<and>
+						<eq>
+							<var>CATALOG_NAME</var>
+							<const type="string">ITEM_MASTER</const>
+						</eq>
+						<defined>
+							<var>GTIN</var>
+						</defined>
+					</and>						
+					<defined>
+						<var>STATUS_CD</var>
+					</defined>
+					<undefined>
+						<var>ITEM_MASTER_PARENT</var>
+				</undefined>
+				</and>	
+				<eq>
+					<var>STATUS_CD</var>
+					<const type="string">PROPOSED</const>
+				</eq>									
+			</and>		
+		</condition>
+		<action>
+			<assign>
+				<var>STATUS_CD</var>
+				<const type="string">IN_PROCESS</const>
+			</assign>			
+		</action>	
+	</constraint>
+	<constraint>
+		<name>setWorkflowItemStatusToReview</name>
+		<description>Set Workflow status</description>
+		<condition>	
+			<and>			
+				<and>	
+					<eq>
+						<var>CATALOG_NAME</var>
+						<const type="string">ITEM_MASTER</const>
+					</eq>							
+					<defined>
+						<var>STATUS_INP</var>
+					</defined>
+				</and>
+					 <undefined>
+						<var>ITEM_MASTER_PARENT</var>
+					</undefined>				
+				<!-- <var>RECORD_IS_ROOT</var> -->	
+				<eq>
+					<var>STATUS_INP</var>
+					<const type="string">REVIEW</const>
+				</eq>
+			</and>	
+		</condition>
+		<action>
+			<assign>
+				<var>STATUS_CD</var>
+				<const type="string">MODIFY_(REVIEW)</const>
+			</assign>			
+		</action>	
+	</constraint>
+	<constraint>
+		<name>setWorkflowItemStatusToReject</name>
+		<description>Set Workflow status</description>
+		<condition>
+			<and>
+				<and>	
+					<eq>
+						<var>CATALOG_NAME</var>
+						<const type="string">ITEM_MASTER</const>
+					</eq>									
+					<defined>
+						<var>STATUS_INP</var>
+					</defined>
+				</and>	
+				<eq>
+					<var>STATUS_INP</var>
+					<const type="string">REJECT</const>
+				</eq>
+				<undefined>
+					<var>ITEM_MASTER_PARENT</var>
+				</undefined>
+			</and>	
+		</condition>
+		<action>
+			<assign>
+				<var>STATUS_CD</var>
+				<const type="string">REJECTED</const>
+			</assign>			
+		</action>	
+	</constraint>
+	<constraint>
+		<name>SetDescription</name>
+		<description>SetDescription</description>	
+		<condition>
+			<defined>
+				<var>Desc1</var>
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>Desc2</var>
+				<var>Desc1</var>
+			</assign>			
+		</action>	
+	</constraint>
+</rulebase>

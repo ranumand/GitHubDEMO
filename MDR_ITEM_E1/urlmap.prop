@@ -1,0 +1,17 @@
+##other file 
+# =============================================================================
+#
+# Copyright (c) 2012 - TIBCO Software 
+# =============================================================================
+##
+# -----------------------------------------------------------------------------
+# Map role assigned to the user to the intial URL displayed. 
+# First match is picked. 
+# =============================================================================
+
+#rolename=URL
+#SUPERUSER=EnterpriseList?action=list&menulink=Enterprise Profiles
+#Repository\ Manager=CatalogList?menulink=Master Catalogs
+#Admin=MemberList?menulink=User Accounts
+#Admin=RoleList
+BrowseAndSearch=BrowseProduct?menulink=Browse

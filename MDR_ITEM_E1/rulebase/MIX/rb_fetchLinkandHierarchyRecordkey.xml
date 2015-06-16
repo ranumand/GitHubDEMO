@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<name>rb_fetchLinkandHierarchyRecordkey</name>
+	<description>rb_fetchLinkandHierarchyRecordkey</description>
+
+	<declare usage="input">
+		<var>PublishedGTIN</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="input">
+		<var>delproductIDs</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="input">
+		<var>inputrecKeyList</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="output">
+		<var>ohinforecKeyList</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="output">
+		<var>olinkrecKeyList</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="output">
+		<var>recKeyList</var>
+		<datatype type="array"/>
+	</declare>
+	<declare >
+		<var>cat_link</var>
+		<link type="catalog">
+			<literal>link_mvl</literal>
+			<literal>STATE/UNCONFIRMED</literal>
+		</link>
+	</declare>
+	<declare>
+		<var>cat_HierarchyInfo</var>
+		<link type="catalog">
+			<literal>HierarchyInformation</literal>
+			<literal>STATE/UNCONFIRMED</literal>
+		</link>
+	</declare>
+
+	<constraint>
+		<name>isCurrentGTINisPublishGTIN</name>			
+		<description>isCurrentGTINisPublishGTIN</description>
+		<condition>
+			<defined>
+				<var>delproductIDs</var>
+			</defined>
+		</condition>
+		<action>			
+			<assign>
+				<var>AllItemID_Array</var>
+				<op func="convertStringToArray">
+					<var>delproductIDs</var>
+					<const type="string">,</const>
+				</op>
+			</assign> 
+			<assign>
+				<var>hinforecKeyList</var>				
+				<table source="sql" distinct="true">
+					<literal>cat_HierarchyInfo/PRODUCTKEYID</literal>
+					<where>
+						<sql>
+							<eq>
+								<literal>cat_HierarchyInfo/PRODUCTID</literal>
+								<var>PublishedGTIN</var>
+							</eq>
+						</sql>
+					</where>
+				</table>
+			</assign>
+			<assign>
+				<var>linkrecKeyList</var>				
+				<table source="sql" distinct="true">
+					<literal>cat_link/PRODUCTKEYID</literal>
+					<where>
+						<sql>
+							<and>
+								<eq>
+									<literal>cat_link/PRODUCTID</literal>
+									<var>PublishedGTIN</var>
+								</eq>
+								<in>
+									<literal>cat_link/CHILDITEM_GTIN</literal>
+									<var>AllItemID_Array</var>
+								</in>
+							</and>
+						</sql>
+					</where>
+				</table>
+			</assign>
+			<assign>
+				<var>recKeyList</var>	
+				<op func="mergeValues">
+					<var>inputrecKeyList</var>
+					<var>hinforecKeyList</var>							
+					<var>linkrecKeyList</var>							
+				</op>
+			</assign>			
+		</action>
+	</constraint>
+	<constraint>
+		<name>isHierarchyexists</name>			
+		<description>isHierarchyexists</description>
+		<condition>
+			<defined>
+				<var>hinforecKeyList</var>
+			</defined>
+		</condition>
+		<action>	
+
+			<assign>
+				<var>ohinforecKeyList</var>	
+				<op func="makeString">
+					<var>hinforecKeyList</var>																		
+				</op>
+			</assign>			
+		</action>
+		<action>	
+			<assign>
+				<var>ohinforecKeyList</var>	
+				<const type="string">NA</const>
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>islinkexists</name>			
+		<description>islinkexists</description>
+		<condition>
+			<defined>
+				<var>linkrecKeyList</var>
+			</defined>
+		</condition>
+		<action>
+
+			<assign>
+				<var>olinkrecKeyList</var>	
+				<op func="makeString">
+					<var>linkrecKeyList</var>							
+				</op>
+			</assign>
+		</action>
+		<action>	
+
+			<assign>
+				<var>olinkrecKeyList</var>	
+				<const type="string">NA</const>
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

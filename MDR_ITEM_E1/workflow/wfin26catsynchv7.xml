@@ -1,0 +1,737 @@
+<?xml version="1.0"?>
+<!--
+    This workflow support synchronization with 1Sync and WWRE and Custom Channel.
+    It has one approval step which uses 'Synchronization Approval' rule
+    The 'Message or Workflow Completion' rule needs to be set for receiving workflow error emails
+-->
+<Workflow Version="1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="Workflow.xsd">
+	<Owner>TIBCO</Owner>
+	<Name>wfin26catsynchv7</Name>
+	<Description>Synchronization Process</Description>
+	<Context>Sender</Context>
+	<Parameter direction="in" name="inDoc" type="document" eval="variable">1</Parameter>
+	<Parameter direction="in" name="inRL" type="recordlist" eval="variable">2</Parameter>
+	<!--Parameter direction="out" name="outDoc1" type="document" eval="variable"/-->
+	<Activity Name="UpdateEventStartSync">
+		<Start/>
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Update event state to indicate start of synchronization</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">START</Parameter>
+        <!-- dbDump is no longer suppoted -->
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="CICCode" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='CICCode']/Value/text()" eval="xpath" type="string">inDoc</Parameter>
+		<Parameter direction="in" name="CICDescription" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='Description']/Value/text()" eval="xpath" type="string">inDoc</Parameter>
+		<Parameter direction="in" name="CICAdditionalDescription" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='AdditionalDescription']/Value/text()" eval="xpath" type="string">inDoc</Parameter>
+		<Parameter direction="in" name="CICActionNeeded" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='ActionNeeded']/Value/text()" eval="xpath" type="string">inDoc</Parameter>
+		<Parameter direction="in" name="CICCorrectiveInfo" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='CorrectiveInfo']/Value/text()" eval="xpath" type="string">inDoc</Parameter>
+	</Activity>
+	<Activity Name="SelectRelationship">		
+
+        <Action>EvaluateRuleBase</Action>
+        <Description lang="en">Get Synchronization Information</Description>
+		<Parameter direction="in" type="string" eval="constant" name="ExecutionMode">NoRecords</Parameter>
+        <Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+        <Parameter direction="in" name="Rulebase" type="string" eval="constant">standard/rulebase/rbgdsnrelationship.xml</Parameter>
+        <!-- Instead of Document use the recordlist to process the records -->
+        <Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+        <!--Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">inRL</Parameter-->
+        <Parameter direction="out" name="relName" type="string" eval="variable">relName</Parameter>
+    	<Parameter direction="out" name="relName1" type="string" eval="variable">relName1</Parameter>
+	</Activity>
+ 	<Activity Name="IdentifyRecordVersions">
+		<Action>IdentifyRecordVersions</Action>
+		<Description lang="en">Picks the appropriate record versions</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYVERSION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!-- Added dummy parameter to allow selection of relationship direction -->
+		<Parameter direction="in" name="relName" type="string" eval="constant">Contains</Parameter>
+	</Activity>
+	<Activity Name="Subset">
+		<Action>EvaluateSubset</Action>
+		<Description lang="en">Apply subset</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SUBSET</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MasterCatalog" type="string" eval="xpath" source="//CatalogActionHeader/CatalogReference[@type='MasterCatalog']/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="RelationshipName" type="string" eval="variable">relName</Parameter>
+		<!--If you want to process Contains relationship successfully in case of ADD-Cancel and ADD-Discontinue for WWRE use 'relName1' as IN parameter-->
+		<!--Parameter direction="in" name="RelationshipName1" type="string" eval="variable">relName1</Parameter-->
+		<Parameter direction="in" name="VersionOption" type="string" eval="catalog" source="VersionOption">inDoc</Parameter>
+		<!-- If you want to cascde subsetting, specify master catalog, subset and record collection -->
+		<!--Parameter direction="in" name="Subset" type="string" eval="constant">MYSUBSET</Parameter-->
+		<!-- FEDOption: I - Include FED Records, O - Only FED Records, N - No FED Records -->
+		<Parameter direction="in" name="FEDOption" type="string" eval="xpath" source="//BuyerCatalogHeader/FEDOption/text()">inDoc</Parameter>
+		<Parameter direction="in" name="FEDDate" type="string" eval="xpath" source="//BuyerCatalogHeader/Date/Code/Normal[text()='FutureEffectiveToDate']/../../DateValue/Value/text()">inDoc</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+	</Activity>
+	<Activity Name="ConvertRecordsToOutputFormat">
+		<Action>ConvertRecordToOutput</Action>
+		<Description lang="en">Transform record data to output format</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CONVERTTOOUTPUT</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">inRL</Parameter>
+		<Parameter direction="in" name="CatalogOutputMap" type="string" eval="xpath" source="//CatalogActionHeader/Extension[@name='CatalogOutputMap']/Value/text()">inDoc</Parameter>
+		<Parameter direction="in" name="CatalogOutputMap" type="long" eval="catalog" source="OutputMapID">inDoc</Parameter>
+		<Parameter direction="in" name="CatalogOutputMap" type="string" eval="lookup" source="{{//MessageHeader[@role='Channel']/Organization/PartyID/DBID},SYNCHRONIZATION,DEFAULTOUTPUTMAP}">inDoc</Parameter>
+		<!--Parameter direction="in" name="BundlePerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">prlog1</Parameter>
+		<Parameter direction="out" name="DataTruncationWarningFlag" eval="variable" type="boolean">dataTruncationWarningFlag</Parameter>
+	</Activity>
+	<!--Activity Name="CreateOutputFile">
+		<Action>CreateOutputFile</Action>
+		<Description lang="en">Write output in file</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GENERATEFILE</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">outDoc1</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" name="BundlePerAsyncCall" type="long" eval="constant">10</Parameter>
+		<Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter>
+	</Activity-->
+	<Activity Name="CreateOutputFileAll">
+		<Action>CreateOutputFile</Action>
+		<Description lang="en">Write output in file</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GENERATEFILE</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">outDoc1</Parameter>
+		<!--Parameter direction="in" name="BundlePerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="ApplySynchRuleBase">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Apply validation and transformation rules</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<Parameter direction="in" name="Rulebase" eval="catalog" type="string" source="TransformRuleBase">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!-- Severity: Validations with severity < input Severity are considered Fatal errors.  The rest are considered Warnings. -->
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<!-- SaveFlag: NONE - Do NOT remove records with errors.  FATAL - Remove records with Fatal errors (see Severity) -->
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<!-- SaveFlag indicates if any changes to attributes should be saved in the database. Values are: SAVE,NOSAVE -->
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">SAVE</Parameter>
+		<!-- Number of FATAL errors (see Severity) -->
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<!-- Number of Warnings (see Severity) -->
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+	</Activity>
+	<Activity Name="IdentifyProtocolOperations">
+		<Action>IdentifyProtocolOperations</Action>
+		<Description lang="en">Identify operations to be performed for each record</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYOPERATION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">pl1</Parameter>
+		<!--Parameter direction="in" name="SyncOptionAddFlag" eval="catalog" type="boolean" source="ItemAdd">inDoc</Parameter-->
+		<Parameter direction="in" name="PUBLISH_FLAG" type="string" eval="xpath" source="//CatalogActionHeader/Extension[@name='PublishFlag']/Value/text()">inDoc</Parameter>
+		<Parameter direction="in" name="RELOAD_FLAG" type="string" eval="xpath" source="//CatalogActionHeader/Extension[@name='ReloadFlag']/Value/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="AsyncStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="out" name="ConnectorProtocol" eval="variable" type="string">connectorProtocol</Parameter>
+	</Activity>
+	<Activity Name="ManageRecordCollection">
+		<Action>ManageRecordCollection</Action>
+		<Description lang="en">Convert record collection to Read Only</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">INTERNALAPPROVAL</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="SetRecordListReadOnly" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalFirstState">
+		<Action>StateTransition</Action>
+		<Description lang="en">Initiate approval</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">INTERNALAPPROVAL</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">new</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="constant" type="string">Step1</Parameter>
+		<!-- Key is made up of "BuyerCatalogInternalApproval" + "InternalID + PublishDate" -->
+		<Parameter direction="in" name="Key1" eval="constant" type="string">BuyerCatalogInternalApproval</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/@externalControlNumber">inDoc</Parameter>
+		<Parameter direction="in" name="Key3" eval="xpath" type="string" source="//CatalogReference[@type='Catalog']/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="Key3" eval="xpath" type="string" source="//CatalogReference[@type='MasterCatalog']/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">BuyerCatalogInternalApproval</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalWorkItem">
+		<Action>CreateWorkItem</Action>
+		<Description lang="en">Create workitem for approval for synchronization</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Synchronization Approval" type="long" name="ParticipantID">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="FormPresentation">com.tibco.mdm.ui.workflow.engine.workitem.templates.CatalogApproval</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="TaskType">CATALOGAPPROVAL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryType">RELATIVE</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+        <Parameter direction="in" name="Intent" eval="constant" type="string">Approval</Parameter>
+		<!--Parameter direction="in" eval="constant" type="string" name="ExpiryDate">1:0:0:0</Parameter-->
+		<!--Parameter direction="out" eval="variable" type="document" name="OutDocument">wiDoc</Parameter-->
+		<Parameter direction="out" eval="variable" type="boolean" name="WorkItemCreated">wiFlag</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="MergedDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalMoveToNext">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next step</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">join</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<!-- First check PO Approval Rule, then Workflow State rule.  If none returns a valid state then error -->
+		<Parameter direction="in" name="MoveTo" eval="rule" source="Synchronization Approval" type="string">workDoc</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="rule" source="Workflow State" type="string">workDoc</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="constant" type="string">Done</Parameter>
+		<!-- Key is made up of "BuyerCatalogInternalApproval" + "InternalID + PublishDate" -->
+		<Parameter direction="in" name="Key1" eval="constant" type="string">BuyerCatalogInternalApproval</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/@externalControlNumber">workDoc</Parameter>
+		<Parameter direction="in" name="Key3" eval="xpath" type="string" source="//CatalogReference[@type='Catalog']/RevisionID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="in" name="Key3" eval="xpath" type="string" source="//CatalogReference[@type='MasterCatalog']/RevisionID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">InternalApprovalNextState</Parameter>
+		<!-- Comment out CouldMove so that an exception gets generated if no-one was there to approve.
+        <Parameter direction="out" name="CouldMove" eval="variable" type="string">InternalApprovalCouldMove</Parameter>
+        -->
+	</Activity>
+	<Activity Name="InternalWorkItemCompletion">
+		<Action>Send</Action>
+		<Description lang="en">Send internal workitem completion email</Description>
+		<Parameter direction="in" eval="rule" source="Synchronization Action Alert" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Synchronization Action Alert" type="string" name="Address">workDoc</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" name="Form" type="string" eval="constant">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Subject" type="string" eval="constant">Catalog Workflow Completion</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailBCWorkItemCompletion</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalResultEmail">
+		<Action>Send</Action>
+		<Description lang="en">Send internal approval result email</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDAPPROVALEMAIL</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Address">workDoc</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" name="Form" type="string" eval="constant">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Subject" type="string" eval="constant">Synchronization Approval </Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailBCApproval1</Parameter>
+	</Activity>
+	<Activity Name="SendTimeOutEmailForApprovalWorkItem">
+		<Action>Send</Action>
+		<Description>Send Email stating that approval workitem has timed out</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDTIMEOUTEMAIL</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">inDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Address">inDoc</Parameter>
+		<Parameter direction="in" eval="constant" name="Sender" type="string">support@tibco.com</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" eval="variable" name="InDocument" type="document">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" name="Presentation" type="string">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailBCTimeOut</Parameter>
+		<Parameter direction="in" eval="variable" name="Approver" type="string">ParticipantName</Parameter>
+		<Parameter direction="in" name="OrganizationName" eval="xpath" type="string" source="/Message/Header/MessageHeader[@role='Supplier']/Organization/PartyID/PartyName/text()">workDoc</Parameter>
+	</Activity>
+	<Activity Name="OutputFileCreate">
+		<Action>CreateOutputFile</Action>
+		<Description lang="en">Write output to file</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GENERATEFILE</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">outDoc1</Parameter>
+		<!--Parameter direction="in" name="BundlePerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="OutputFileSendByEmail">
+		<Action>Send</Action>
+		<Description>Send Catalog File using email</Description>
+		<Parameter direction="in" name="eventState" type="string" eval="constant">SENDCATALOG</Parameter>
+		<Parameter direction="in" name="Protocol" type="string" eval="constant">SMTP</Parameter>
+		<Parameter direction="in" name="Subject" type="string" eval="constant">Catalog Output File</Parameter>
+        <Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+        <Parameter direction="in" name="Form" type="string" eval="constant">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" name="InAttachments" eval="variable" type="document">outDoc1</Parameter>
+		<Parameter direction="in" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/BuyerCatalogHeader/CatalogDestination/Email/Value/text()" type="string" name="Address">inDoc</Parameter>
+	</Activity>
+	<Activity Name="OutputFileSendByFTP">
+		<Action>Send</Action>
+		<Description>Send Catalog File using FTP</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDCATALOG</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Protocol">FTP</Parameter>
+		<Parameter direction="in" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/BuyerCatalogHeader/CatalogDestination/FTP/ShortName/text()" type="string" name="Address">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" source="/Message/Header/MessageHeader[@role='Buyer']/Organization/PartyID/DBID/text()" type="string" name="BuyerID">inDoc</Parameter>
+		<Parameter direction="in" eval="variable" name="InDocument" type="document">workDoc</Parameter>
+		<Parameter direction="in" eval="variable" name="InAttachments" type="document">outDoc1</Parameter>
+	
+	</Activity>
+	<Activity Name="SendCatalogByEmail">
+		<Action>Send</Action>
+		<Description>Send a Email with catalogFile -- Unused -- to be defined</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDCATALOG</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Protocol">SMTP</Parameter>
+		<Parameter direction="in" name="Subject" type="string" eval="constant">Catalog Output File</Parameter>
+        <Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" eval="variable" name="InAttachments" type="document">outDoc1</Parameter>
+		<Parameter direction="in" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/BuyerCatalogHeader/CatalogDestination/Email/Value/text()" type="string" name="Address">inDoc</Parameter>
+	</Activity>
+	<Activity Name="SendCatalogByFTP">
+		<Action>Send</Action>
+		<Description>Send catalogFile using FTP</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDCATALOG</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Protocol">FTP</Parameter>
+		<Parameter direction="in" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/BuyerCatalogHeader/CatalogDestination/FTP/ShortName/text()" type="string" name="Address">inDoc</Parameter>
+		<Parameter direction="in" eval="variable" name="InDocument" type="document">workDoc</Parameter>
+		<Parameter direction="in" eval="variable" name="InAttachments" type="document">outDoc1</Parameter>
+	</Activity>
+	<Activity Name="CreateValidateWorkItem">
+		<Action>CreateWorkItem</Action>
+		<Description lang="en">Create workitem to show synchronization validation report</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" eval="xpath" source="/Message/Header/MessageHeader[(@role='Supplier' or @role='Retailer') and @origin='Sender']/Member/PartyID/DBID/text()" type="long" name="ParticipantID">inDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ParticipantType">MEMBER</Parameter>
+        <Parameter direction="in" name="Intent" eval="constant" type="string">Notify</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="FormPresentation">com.tibco.mdm.ui.workflow.engine.workitem.templates.CatalogValidate</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="TaskType">CATALOGAPPROVAL</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">inDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="MailPresentation">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailBCValidate</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="WorkItemCreated">validationFlag</Parameter>
+	</Activity>
+	<!-- The default is to generate synch history and to update it as success as there will no response -->
+	<Activity Name="HandleMessagingDecision">
+		<Action>NoOperation</Action>
+		<Description lang="en">Decide which path to take</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GENERATE</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+	</Activity>
+	<!-- The default is to generate synch history and to update it as success as there will no response -->
+	<Activity Name="HandleMessagingDefault">
+		<Action>HandleProtocolMessaging</Action>
+		<Description lang="en">Default message handling - create synchronization history</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="ResponseRequired" type="boolean" eval="constant">false</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" name="ProtocolMessagingCommand" type="string" eval="constant">START</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!-- Outdoc is not specified. That way, all the records are processed in one iteration -->
+	</Activity>
+	<Activity Name="HandleMessagingXML">
+		<Action>HandleProtocolMessaging</Action>
+		<Description lang="en">Create a message for a set of records, as generic XML</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="ResponseRequired" type="boolean" eval="constant">false</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!-- Added commandsPerMessage to change the default = 50, so that large number of records are processed in one iteration -->
+		<Parameter direction="in" name="CommandsPerMessage" type="long" eval="constant">3000</Parameter>
+		<Parameter direction="in" name="ProtocolMessagingCommand" type="string" eval="constant">START</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">messageDoc</Parameter>
+	</Activity>
+ 	<Activity Name="TranslateMessageToCustomXML">
+		<Action>Translate</Action>
+		<Description lang="en">Generate a custom XML</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TRANSLATE</Parameter>
+		<Parameter direction="in" name="Derived" type="string" eval="constant">false</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Translator">XSLT</Parameter>
+		<!--Parameter direction="in" eval="constant" type="string" name="Map">standard/maps/mpfrommlxml25totrmainv1</Parameter-->
+		<!-- Map name can come from input doc or Catalog Object. -->
+		<Parameter direction="in" name="Map" type="string" eval="xpath" source="//CatalogActionHeader/Extension[@name='XSLTFileName']/Value">inDoc</Parameter>
+		<Parameter direction="in" name="Map" eval="catalog" type="string" source="XSLTFileName">inDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="OutputFormat">XML</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Normalize">None</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">messageDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">syncDoc</Parameter>
+	</Activity>
+ 	
+	<Activity Name="Send">
+		<Action>NoOperation</Action>
+		<Description lang="en">Check if we need to send the generated file</Description>
+	</Activity>
+	<Activity Name="SetStatusToCancel">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event state to Cancelled/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">CANCELLED</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToSuccess">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event state to Success/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">SUCCESS</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+		<Parameter direction="in" type="string" eval="property" name="FINALRECORDLISTID">workRecordList.ID</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event state to Error/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">ERROR</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+		<Parameter direction="in" type="string" eval="property" name="FINALRECORDLISTID">workRecordList.ID</Parameter>
+	</Activity>
+	<Activity Name="RejectDueToWorkflowError">
+		<Action>Send</Action>
+		<Description lang="en">Send email to indicate failure as no user is assgined to this message</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">REJECTDUETOWFERROR</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">inDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="long" name="Address">inDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailBCWorkflowError</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Form">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">inDoc</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToSuccessNOOP">
+		<Action>NoOperation</Action>
+		<Description lang="en">Decide which path to take</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+	</Activity>
+	 <Activity Name="InitiateGDSNSync">
+		<Action>InitiateSubFlow</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" name="IdentifyProtocolOperationProcessLogID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">standard/workflow/wfin26catsynchv7_gdsn</Parameter>
+		<Parameter name="EVENTDESCRIPTOR" direction="in" type="string" eval="xpath" source="/Message/Body/Document/@subtype">inDoc</Parameter>
+		<Parameter direction="in" name="workRecordList" type="recordlist" eval="variable">InRecordList</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="ConnectorProtocol" direction="in" type="string" eval="variable">connectorProtocol</Parameter>			
+		<Parameter name="OutDocument" direction="out" type="document" eval="variable">workDoc</Parameter>
+	</Activity>
+	<Activity Name="InitiateClassPromotion">
+		<Action>InitiateSubFlow</Action>
+		<Description>Initiate flow for class promotion</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SPAWNWORKFLOW</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="ProcessID">MDRITME1/workflow/CP/wf_SendCICSynchronization</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">inDoc</Parameter>
+		<Parameter direction="in" type="boolean" eval="constant" name="SubflowFlag">true</Parameter>
+		<Parameter direction="out" name="errorFlag" type="boolean" eval="variable">errorFlag</Parameter>
+	</Activity>
+	<Activity Name="HandleException">
+		<Action>HandleException</Action>
+		<Description lang="en">Handle Exception</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" eval="constant" type="string">HANDLEEXCEPTION</Parameter>
+		<Parameter name="BackupLogs" direction="in" eval="constant" type="string">F</Parameter>
+		<Parameter name="NoOfBackup" direction="in" eval="constant" type="long">5</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">CIM_errorDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Error_Severity">WARNING</Parameter>
+		<Parameter direction="in" type="string" eval="variable" name="StackTraceDesc">Stacktrace_Out</Parameter>
+		<Parameter direction="in" type="string" eval="variable" name="FailedActivity">FailedActivity_Out</Parameter>
+	</Activity>	
+	<Activity Name="PublishToBW">
+		<Action>SendProtocolMessage</Action>
+		<Description>Publishes the error message to KLEAR for logging</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" eval="constant" type="string">JMS</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">Q_ECM_INTGR_POSTKLEAR</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">CIM_errorDoc</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="ChannelOrganizationName" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">CIM_errorDoc</Parameter>
+		<Parameter name="TradingPartnerCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDMESSAGE</Parameter>
+	</Activity>
+	
+ 	<!--  *************  Transitions  *************  -->
+	<!-- Transition to call class promotion subflows -->
+	<Transition FromActivity="UpdateEventStartSync" ToActivity="InitiateClassPromotion">
+		<Description>If Synchronization Profile is CP_SYNCHRONIZATION than initiate class promotion workflow</Description>
+		<Rule>
+			<Parameter name="MasterCatalog" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/BuyerCatalogHeader/RevisionID/BaseName/text()">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+				
+				if(MasterCatalog.equalsIgnoreCase("CP_SYNCHRONIZATION")) 
+				{
+					result=true;
+	            }else{
+					result=false;
+				}
+				
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InitiateClassPromotion" ToActivity="RejectDueToWorkflowError">
+	<Description>If Subflow has errors than log into Klear</Description>
+	<Rule>
+			<Parameter name="errorFlag" type="string" eval="variable"  direction="in">errorFlag</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">true</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(errorFlag, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InitiateClassPromotion" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="UpdateEventStartSync" ToActivity="ConvertRecordsToOutputFormat">
+		<Description>If there is a RecordList passed in then go straight to ConvertRecordsToOutputFormat.</Description>
+		<Rule>
+			<Parameter name="inRL" type="recordlist" eval="variable" direction="in">inRL</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(inRL);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="UpdateEventStartSync" ToActivity="IdentifyRecordVersions"/>
+	<Transition FromActivity="IdentifyRecordVersions" ToActivity="SelectRelationship">
+		<Rule>
+			<Parameter name="software_edition" type="string" eval="variable"  direction="in">SOFTWARE_EDITION</Parameter>
+ 			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh"><![CDATA[
+                result = com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isGDSN_SoftwareEdition(software_edition);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+  	<Transition FromActivity="SelectRelationship" ToActivity="Subset"/>
+  	<Transition FromActivity="IdentifyRecordVersions" ToActivity="Subset"/>
+	<Transition FromActivity="Subset" ToActivity="ConvertRecordsToOutputFormat"/>
+	<!-- *************  Start ALL Specific Workflow  *************  -->
+	<Transition FromActivity="ConvertRecordsToOutputFormat" ToActivity="CreateOutputFileAll">
+		<Description>Request for approval.</Description>
+		<Rule>
+			<Parameter name="versionOption" type="string" eval="xpath" direction="in" source="//CatalogActionHeader/Extension[@name='VersionOption']/Value">inDoc</Parameter>
+			<Parameter name="versionOption" type="string" eval="catalog" direction="in" source="versionOption">inDoc</Parameter>
+			<Parameter name="deliverTo" type="string" eval="catalog" direction="in" source="deliverTo">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSynchronizationTransition.convertRecordsToOutputFormatToCreateOutputFileAll(versionOption, deliverTo);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CreateOutputFileAll" ToActivity="Send"/>
+	<Transition FromActivity="Send" ToActivity="SendCatalogByEmail">
+		<Description>Send by email.</Description>
+		<Rule>
+			<Parameter name="sendOption" type="string" eval="catalog" direction="in" source="TransferMode">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">EMAIL</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(sendOption, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="Send" ToActivity="SendCatalogByFTP">
+		<Description>Send by email.</Description>
+		<Rule>
+			<Parameter name="sendOption" type="string" eval="catalog" direction="in" source="TransferMode">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">FTP</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(sendOption, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="Send" ToActivity="SetStatusToSuccessNOOP"/>
+	<Transition FromActivity="SendCatalogByEmail" ToActivity="SetStatusToSuccessNOOP"/>
+	<Transition FromActivity="SendCatalogByFTP" ToActivity="SetStatusToSuccessNOOP"/>
+	<!-- *************  End ALL Specific Workflow  *************  -->
+	<!-- *************  Start of General Workflow  *************  -->
+	<Transition FromActivity="ConvertRecordsToOutputFormat" ToActivity="IdentifyProtocolOperations"/>
+	<!--
+    <Transition FromActivity="IdentifyProtocolOperations" ToActivity="CreateOutputFile">
+        <Description>If output file is to be generated.  First try input document then Catalog.</Description>
+        <Rule>
+            <Parameter name="generateFile" type="boolean" eval="xpath" direction="in" source="//CatalogActionHeader/Extension[@name='FileGenerationOption']/Value/text()">inDoc</Parameter>
+            <Parameter name="generateFile" type="boolean" eval="catalog" direction="in" source="FileGenerationOption">inDoc</Parameter>
+            <Parameter name="result" type="boolean" direction="out"/>
+            <Condition format="bsh">
+            <![CDATA[
+                result = generateFile;
+            ]]>
+            </Condition>
+        </Rule>
+    </Transition>
+    -->
+	<Transition FromActivity="IdentifyProtocolOperations" ToActivity="ApplySynchRuleBase"/>
+	<!--Transition FromActivity="CreateOutputFile" ToActivity="ApplySynchRuleBase"/-->
+	<Transition FromActivity="ApplySynchRuleBase" ToActivity="ManageRecordCollection"/>
+	<Transition FromActivity="ManageRecordCollection" ToActivity="CreateValidateWorkItem">
+		<Description>If action is validate, create notification workitem.</Description>
+		<Rule>
+			<Parameter direction="in" name="action" type="string" eval="xpath" source="//BuyerCatalogHeader/ActionCode/Code/Normal/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">VALIDATE</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(action, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CreateValidateWorkItem" ToActivity="SetStatusToSuccessNOOP"/>
+	<!-- *************  Do Actual Publish *************  -->
+	<!--Transition FromActivity="ApplySynchRuleBase" ToActivity="ManageRecordCollection"/-->
+	<Transition FromActivity="ManageRecordCollection" ToActivity="InternalApprovalFirstState"/>
+	<!--Transition FromActivity="ApplySynchRuleBase" ToActivity="InternalApprovalFirstState"/-->
+	<Transition FromActivity="InternalApprovalFirstState" ToActivity="InternalApprovalWorkItem"/>
+	<Transition FromActivity="InternalApprovalWorkItem" ToActivity="InternalApprovalWorkItem">
+		<Description>Test that all created workitems have been completed </Description>
+		<Rule>
+			<Parameter name="wicreated" type="boolean" eval="variable" direction="in">wiFlag</Parameter>
+			<Parameter name="numberCreated" type="long" eval="variable" direction="in">NumberCreated</Parameter>
+			<Parameter name="numberCompleted" type="long" eval="variable" direction="in">NumberCompleted</Parameter>
+			<Parameter name="response" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.responseDoesNotEqualReject(wicreated, numberCreated, numberCompleted, response);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalWorkItem" ToActivity="InternalApprovalMoveToNext">
+		<Description>If not workitem created, skip the sending of the email.</Description>
+		<Rule>
+			<Parameter direction="in" type="boolean" eval="variable" name="wicreated">wiFlag</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.setToInverseValue(wicreated);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalWorkItem" ToActivity="InternalWorkItemCompletion"/>
+	<Transition FromActivity="InternalWorkItemCompletion" ToActivity="InternalApprovalResultEmail">
+		<Description>If Reject, then skip other approvals and go to email.</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Reject</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(status, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalWorkItemCompletion" ToActivity="InternalApprovalMoveToNext"/>
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="InternalApprovalWorkItem">
+		<Description>If not done, loop</Description>
+		<Rule>
+			<Parameter name="state" type="string" eval="variable" direction="in">InternalApprovalNextState</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Done</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsIgnoringCase(state, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="InternalApprovalResultEmail"/>
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="SetStatusToSuccessNOOP">
+		<Description>If Rejected, then go to done.</Description>
+		<Rule>
+			<Parameter name="response" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Reject</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(response, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!--
+    <Transition FromActivity="InternalApprovalResultEmail" ToActivity="Send">
+        <Description>If ALL go straight to Send.</Description>
+        <Rule>
+            <Parameter name="versionOption" type="string" eval="xpath" direction="in" source="//CatalogActionHeader/Extension[@name='VersionOption']/Value/text()">inDoc</Parameter>
+            <Parameter name="versionOption" type="string" eval="catalog" direction="in" source="VersionOption">inDoc</Parameter>
+            <Parameter name="result" type="boolean" direction="out"/>
+            <Condition format="bsh">
+            <![CDATA[
+                result = ((versionOption != null ) && (versionOption.equalsIgnoreCase("ALL"))) ;
+            ]]>
+            </Condition>
+        </Rule>
+    </Transition>
+    -->
+	<!-- Check if generic XML is to be generated -->
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="OutputFileCreate">
+		<Description>If output file is to be generated. First try input document then Catalog.</Description>
+		<Rule>
+			<Parameter name="generateFile" type="boolean" eval="xpath" direction="in" source="//CatalogActionHeader/Extension[@name='FileGenerationOption']/Value/text()">inDoc</Parameter>
+			<Parameter name="generateFile" type="boolean" eval="catalog" direction="in" source="FileGenerationOption">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.notNullAndSetToBoolean(generateFile);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- no output file generation, go straight to HandleMessagingDecision -->
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="HandleMessagingDecision"/>
+	<Transition FromActivity="OutputFileCreate" ToActivity="OutputFileSendByEmail">
+		<Description>Send by email.</Description>
+		<Rule>
+			<Parameter name="sendOption" type="string" eval="xpath" direction="in" source="//CatalogActionHeader/Extension[@name='TransferMode']/Value/text()">inDoc</Parameter>
+			<Parameter name="sendOption" type="string" eval="catalog" direction="in" source="TransferMode">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">EMAIL</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(sendOption, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="OutputFileCreate" ToActivity="OutputFileSendByFTP">
+		<Description>Send by ftp.</Description>
+		<Rule>
+			<Parameter name="sendOption" type="string" eval="catalog" direction="in" source="TransferMode">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">FTP</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(sendOption, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Unknown TransferMode - do not send. -->
+	<Transition FromActivity="OutputFileCreate" ToActivity="HandleMessagingDecision"/>
+	<Transition FromActivity="OutputFileSendByEmail" ToActivity="HandleMessagingDecision"/>
+	<Transition FromActivity="OutputFileSendByFTP" ToActivity="HandleMessagingDecision"/>
+	<!-- Generate a custom XML?, Check format name, does it contain "_XML"-->
+	<Transition FromActivity="HandleMessagingDecision" ToActivity="HandleMessagingXML">
+		<Description>Default processing to create sync history.</Description>
+		<Rule>
+			<Parameter name="isXML" type="boolean" eval="xpath" direction="in" source="//CatalogActionHeader/Extension[@name='IsXMLFormat']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="isXML" eval="catalog" source="IsXMLFormat" type="boolean">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.notNullAndSetToBoolean(isXML);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Convert to custom XML now. -->
+	<Transition FromActivity="HandleMessagingXML" ToActivity="TranslateMessageToCustomXML"/>
+	<Transition FromActivity="TranslateMessageToCustomXML" ToActivity="SetStatusToSuccessNOOP"/>
+	<!--  End of workflow for custom XML generation -->
+	<Transition FromActivity="HandleMessagingDecision" ToActivity="HandleMessagingDefault">
+		<Description>If no connector protocol is specified then go to the default.</Description>
+		<Rule>
+			<Parameter name="connProtocol" type="string" eval="variable" direction="in">connectorProtocol</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Unknown</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNullOrEqualsIgnoreCase(connProtocol, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="HandleMessagingDecision" ToActivity="InitiateGDSNSync">
+		<Rule>
+			<Parameter name="software_edition" type="string" eval="variable"  direction="in">SOFTWARE_EDITION</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh"><![CDATA[
+                result = com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isGDSN_SoftwareEdition(software_edition);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	
+	<!-- Default -->
+	<Transition FromActivity="HandleMessagingDefault" ToActivity="SetStatusToSuccessNOOP"/>
+	<Transition FromActivity="SetStatusToSuccessNOOP" ToActivity="SetStatusToSuccess"/>
+	<!-- Timeout transitions -->
+	<Transition type="timeout" FromActivity="InternalApprovalWorkItem" ToActivity="SendTimeOutEmailForApprovalWorkItem"/>
+	<!-- ERROR Transitions -->
+	<Transition type="error" FromActivity="Any" ToActivity="RejectDueToWorkflowError"/>
+	<Transition FromActivity="RejectDueToWorkflowError" ToActivity="HandleException"/>
+	<Transition FromActivity="HandleException" ToActivity="PublishToBW"/>
+	<Transition FromActivity="PublishToBW" ToActivity="SetStatusToError"/>
+	<!-- CANCEL transitions -->
+	<Transition type="cancel" FromActivity="Any" ToActivity="SetStatusToCancel"/>
+
+</Workflow>

@@ -1,0 +1,1084 @@
+<?xml version="1.0"?>
+<!--
+    Route the Import Data into Master Catalog Workitem to Approvers.
+
+    Note: We assume that Contains relationship has AUTOBUNDLE = 'Y'.
+
+          If Contains has AUTOBUNDLE = 'N', then out of box import workflow will not work correctly.
+
+          This is because out of box import workflow has 'Contains' being passed into the activity ManageRecordCollection.
+
+          Therefore, if Contains is AUTOBUNDLE = 'N', all records imported will be a root record. No Bundles will be created and processed during import.
+
+          BUT, since Contains is passed into SPAWN by default, then bundles will get created and spawned, which
+
+          is INCONSISTENT with what was processed during import.
+
+          THEREFORE, this workflow should be configured correctly if Contains relationship is changed.
+
+-->
+<Workflow Version="1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="Workflow.xsd">
+	<Owner>TIBCO1</Owner>
+	
+	<Description lang="en">Process for data source upload and import</Description>
+	skjhdsakjh
+	<Parameter direction="in" eval="variable" type="document" name="inDoc">1</Parameter>
+	<!--Parameter direction="out" eval="variable" type="document" name="inDoc"/-->
+	<!--Execution>SYNCHR</Execution-->
+	<Activity Name="AddMsgInfoToEvent">
+		<Start/>
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Initialize event info</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">START</Parameter>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="xpath" source="/Message/Body/Document/@subtype">inDoc</Parameter>
+		<Parameter direction="in" name="deploymentMode" type="string" eval="xpath" source="/Message/@messageType">inDoc</Parameter>
+		<Parameter direction="in" name="dbDirectLoadDump" type="string" eval="constant">N</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="PurgeStaging">
+		<Action>PurgeStaging</Action>
+		<Description lang="en">Purge Staging Data</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">PURGE</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="CatalogInputMap" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/InputMap/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">false</Parameter>
+	</Activity>
+	<Activity Name="PrepareForImportCatalog">
+		<Action>PrepareForImportCatalog</Action>
+		<Description lang="en">Import summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">PREPAREFORIMPORT</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="CatalogInputMap" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/InputMap/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!--Parameter direction="in" eval="constant" type="long" name="ErrorThreshold">100</Parameter-->
+		<!--Parameter direction="in" eval="constant" type="long" name="RecordPerAsyncCall">100</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<!--Parameter direction="in" name="Rulebase" eval="constant" type="string">D:\common\a\rulebase/catalogvalidation.xml</Parameter-->
+
+	</Activity>
+	<Activity Name="ImportCatalog">
+		<Action>ImportCatalogRecords</Action>
+		<Description lang="en">Import summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IMPORT</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="Incremental" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='Incremental']/Value/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MergeData" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='MergeData']/Value/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="SplitImportBatch" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='SplitImportBatch']/Value/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="CatalogInputMap" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/InputMap/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsSuccess">recordsSuccess</Parameter>
+		<!--Parameter direction="in" eval="constant" type="long" name="ErrorThreshold">100</Parameter-->
+		<!--Parameter direction="in" eval="constant" type="long" name="RecordPerAsyncCall">100</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<!-- ProcessOption: MUTATION - M, DUPLICATE - D, RELATIONSHIP - R, CYCLIC - C -->
+		<!--Parameter direction="in" name="ProcessOption" type="string" eval="constant">MD</Parameter-->
+		<!-- If this param is not defined, activity will throw an exception to abort the workflow. By defining -->
+		<!-- this param, you are taking responsibility to handle errors. -->
+		<Parameter direction="out" eval="variable" type="long" name="CatalogsWithErrors">catalogsWithError</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="Stacktrace_In">Error occurred during import process</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="FailedActivity_In">Import Catalog</Parameter>
+		<Parameter direction="out" type="string" eval="variable" name="Stacktrace_In">Stacktrace_Out</Parameter>
+		<Parameter direction="out" type="string" eval="variable" name="FailedActivity_In">FailedActivity_Out</Parameter>
+	</Activity>
+	<Activity Name="DeleteRecord">
+		<Action>DeleteRecord</Action>
+		<Description lang="en">Delete records for import</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IMPORTDELETEPROD</Parameter>
+		<Parameter direction="in" name="ImportDataDeleteRecord" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()">inDoc</Parameter>
+		<!--Parameter direction="in" eval="constant" type="long" name="RecordPerAsyncCall">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="ExtractRelationship">
+		<Action>ExtractRelationship</Action>
+		<Description lang="en">Process record relationship for import</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IMPORTRELATION</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="ImportRelationshipsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ImportRelationshipsOnly']/Value/text()">inDoc</Parameter>
+		<!--Parameter direction="in" eval="constant" type="long" name="RecordPerAsyncCall">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<Parameter direction="in" name="IsLoggingRequired" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<Activity Name="ManualClassification">
+		<Action>ManualClassification</Action>
+		<Description lang="en">Manual Classification of Records</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">MANUALCLASSIFICATION</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="CatalogInputMap" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/InputMap/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="ClassifyRecordsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ClassifyRecordsOnly']/Value/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!--Parameter direction="in" eval="constant" type="long" name="ErrorThreshold">100</Parameter-->
+		<!--Parameter direction="in" eval="constant" type="long" name="RecordPerAsyncCall">100</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="ReclassifyRecordsForImport">
+		<Action>ReclassifyRecord</Action>
+		<Description lang="en">Extract all Classification Schemas for Import</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IMPORTEXTRACTCLASSIFICATION</Parameter>
+		<Parameter direction="in" name="ImportClassificationScheme" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()">inDoc</Parameter>
+	</Activity>
+	<Activity Name="ManageRecordCollection">
+		<Action>ManageRecordCollection</Action>
+		<Description lang="en">Create record bundles</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CREATEBUNDLE</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter>
+		<Parameter direction="in" name="BundlingOption" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" name="SetRecordListReadOnly" type="boolean" eval="constant">false</Parameter>
+		<!--Parameter direction="in" eval="constant" type="long" name="RecordPerAsyncCall">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<!--Parameter direction="in" name="IncludeDraftRecords" type="boolean" eval="constant">false</Parameter-->
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">rejectRecordList</Parameter>
+	</Activity>
+	<!-- Added duplicate activity deliberately. This allows us to have no bundling for direct load. If we do need bundling,
+
+	simply switch on bundling and uncomment relationshi. -->
+	<Activity Name="ManageRecordCollectionDirectLoad">
+		<Action>ManageRecordCollection</Action>
+		<Description lang="en">Create simple record collection without bundling</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CREATEBUNDLE</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!--Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter-->
+		<Parameter direction="in" name="BundlingOption" type="boolean" eval="constant">false</Parameter>
+		<!--Parameter direction="in" eval="constant" type="long" name="RecordPerAsyncCall">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<Parameter direction="in" name="SetRecordListReadOnly" type="boolean" eval="constant">false</Parameter>
+		<!--Parameter direction="in" name="IncludeDraftRecords" type="boolean" eval="constant">false</Parameter-->
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">rejectRecordList</Parameter>
+	</Activity>
+	<!-- Created sepearate activity to allow for different rulebase to used for direct load -->
+	<Activity Name="EvaluateRulebaseDirectLoad">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Apply validation rules for records which are not bundled</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<!--        <Parameter direction="in" name="Rulebase" eval="constant" type="string">sampleRulebase</Parameter> -->
+		<!--Parameter direction="in" name="Rulebase" eval="constant" type="string">D:\common\a\rulebase/catalogvalidation.xml</Parameter-->
+		<!--Parameter direction="in" name="BundlePerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<!--Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter-->
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!-- Severity: Validations with severity < input Severity are considered Fatal errors.  The rest are considered Warnings. -->
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<!--    RemoveRecord : NONE - Do NOT remove records with errors.  FATAL - Remove records with Fatal errors (see Severity)  -->
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<!-- SaveFlag indicates if any changes to attributes should be saved in the database. Values are: SAVE,NOSAVE -->
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">SAVE</Parameter>
+		<!-- Number of FATAL errors (see Severity) -->
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<!-- Number of Warnings (see Severity) -->
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+		<!-- OutRecordList - with Valid record bundles -->
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!-- OutRecordList2 - with Error record bundles -->
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">workRecordList1</Parameter>
+	</Activity>
+	<Activity Name="EvaluateRuleBase">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Apply validation rules</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<!--        <Parameter direction="in" name="Rulebase" eval="catalog" type="string" source="TransformRuleBase">inDoc</Parameter> -->
+		<!--Parameter direction="in" name="Rulebase" eval="constant" type="string">D:\common\a\rulebase/catalogvalidation.xml</Parameter-->
+		<!--Parameter direction="in" name="BundlePerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<!--Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter-->
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!-- Severity: Validations with severity < input Severity are considered Fatal errors.  The rest are considered Warnings. -->
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<!--    RemoveRecord : NONE - Do NOT remove records with errors.  FATAL - Remove records with Fatal errors (see Severity)  -->
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<!-- SaveFlag indicates if any changes to attributes should be saved in the database. Values are: SAVE,NOSAVE -->
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">SAVE</Parameter>
+		<!-- Number of FATAL errors (see Severity) -->
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<!-- Number of Warnings (see Severity) -->
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+		<!-- OutRecordList - with Valid record bundles -->
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<!-- OutRecordList2 - with Error record bundles -->
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">workRecordList1</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalMoveToFirst">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next step</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">STATETRANSITION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="constant" type="string">Step1</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ImportMasterCatalogInternalApproval</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/ThisDocID/DocID/IDNumber/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">InternalApprovalNextState</Parameter>
+	</Activity>
+	<Activity Name="ImpInternalApprovalWorkitem">
+		<Action>CreateWorkItem</Action>
+		<Description lang="en">Create a workitem for import approval</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IMPORTAPPROVALWORKITEM</Parameter>
+		<Parameter direction="in" name="Intent" eval="constant" type="string">Approval</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">pl2</Parameter>
+		<Parameter direction="in" eval="rule" source="Import Approval" type="long" name="ParticipantID">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="FormPresentation">com.tibco.mdm.ui.workflow.engine.workitem.templates.CatalogImportApproval</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="TaskType">CATALOGIMPORTRECORD</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryType">RELATIVE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="ExpiryDate">1:0:0:0</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">wiDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="WorkItemCreated">approvalFlag</Parameter>
+		<Parameter direction="out" eval="variable" type="boolean" name="MergedDocument">workDoc</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+	</Activity>
+	<Activity Name="InternalApprovalMoveToNext">
+		<Action>StateTransition</Action>
+		<Description lang="en">Set workflow to next step</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">STATETRANSITION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ConversationAction" eval="constant" type="string">connect</Parameter>
+		<Parameter direction="in" name="CheckTransition" eval="constant" type="string">false</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="rule" source="Import Approval" type="string">workDoc</Parameter>
+		<Parameter direction="in" name="MoveTo" eval="constant" type="string">Done</Parameter>
+		<Parameter direction="in" name="Key1" eval="constant" type="string">ImportMasterCatalogInternalApproval</Parameter>
+		<Parameter direction="in" name="Key2" eval="xpath" type="string" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/ThisDocID/DocID/IDNumber/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="ConversationState" eval="variable" type="string">InternalApprovalNextState</Parameter>
+		<Parameter direction="out" name="CouldMove" eval="variable" type="string">approvalCouldMove</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsRejected">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set record status as rejected for all records, import is not approved</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">REJECTED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="UpdateRecordStateAsRejected1">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set record status as rejected for records which failed validations</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">REJECTED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<!-- Failed record list is input -->
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList1</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsRejected2">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set record status as rejected as these records failed in bundling</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">REJECTED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!-- Failed record list is input -->
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">rejectRecordList</Parameter>
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="UpdateRecordStateAsRejected3">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set record status as rejected for records which failed validations</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">REJECTED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+		<!-- No need to specify a record collection -->
+		<!--Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList1</Parameter-->
+	</Activity>
+	<Activity Name="UpdateRecordStateAsRejected5">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set record status as rejected as these records failed in bundling</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">REJECTED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!-- Failed record list is input -->
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">rejectRecordList</Parameter>
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="UpdateRecordStateAsCancelled">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set record status as rejected and update logs</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">REJECTED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<!-- Confirm with override, only those records which passed validations -->
+	<Activity Name="UpdateRecordStateAsConfirmed">
+		<Action>UpdateRecordState</Action>
+		<Description lang="en">Set record status as confirmed</Description>
+		<Parameter direction="in" type="boolean" eval="constant" name="OverrideConflict">true</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPDATERECORDSTATUS</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<!--Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter-->
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="SpawnWorkflow">
+		<Action>SpawnWorkflow</Action>
+		<Description lang="en">Spawn individual WorkFlow for each record bundle</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SPAWNWORKFLOW</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="ProcessID" type="string" eval="constant">standard/workflow/wfin26catsourceimportv2</Parameter>
+		<Parameter direction="in" name="DocumentTemplate" type="string" eval="constant">standard/template/tm26catimportv1.xml</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">standard/forms/fm26importtemplatev1.xml</Parameter>
+		<Parameter direction="in" name="DefaultDomain" type="string" eval="constant">MartQuestNet</Parameter>
+		<Parameter direction="in" name="SenderCredential" eval="xpath" type="long" source="/Message/Header/MessageHeader[@origin='Receiver']/Member/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="ChannelCredential" eval="xpath" type="long" source="/Message/Header/MessageHeader[@origin='Receiver']/Member/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="TradingPartnerCredential" eval="xpath" type="long" source="/Message/Header/MessageHeader[@origin='Receiver']/Member/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="MasterCatalog" eval="xpath" type="long" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>
+		<!--Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter-->
+		<!--Parameter direction="in" name="RecordPerAsyncCall" type="long" eval="constant">10</Parameter-->
+		<!--Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">true</Parameter-->
+	</Activity>
+	<Activity Name="UpdateEventForHierarchyReject">		
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Update event for hierarchy reject import</Description>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="constant">ImportRecordForHierarchyReject</Parameter>
+	</Activity>
+	<Activity Name="HierarchyCICRejectSpawnFlow">
+		<Action>SpawnWorkflow</Action>
+		<Description lang="en">Spawn each Hierarchy Reject records</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SPAWNWORKFLOW</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="ProcessID" type="string" eval="constant">MDRITME1/workflow/MIX/wf_initiateSubflowToSendCICHierarchyReject</Parameter>
+		<Parameter direction="in" name="DocumentTemplate" type="string" eval="constant">MDRITME1/templates/tmpHierarchyReject_CIC.xml</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">MDRITME1/forms/fm_HierarchyReject_CIC.xml</Parameter>
+		<Parameter direction="in" name="SenderCredential"  type="string" eval="constant">0011110000019</Parameter>
+		<Parameter direction="in" name="ChannelCredential" type="string" eval="constant">8380160030003</Parameter>
+		<!--Parameter name="ChannelOrganizationName" direction="in" type="string" eval="constant">MDR_ITEM_E1</Parameter-->
+		<!--Parameter name="TradingPartnerCredential" direction="in" type="string" eval="constant">0614141410439</Parameter-->
+		<Parameter direction="in" name="HierarchyRejectCICIM" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/InputMap/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="TradingPartnerCredential" eval="xpath" type="long" source="/Message/Header/MessageHeader[@origin='Receiver']/Member/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="MasterCatalog" eval="xpath" type="long" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>		
+	</Activity>
+	<Activity Name="InternalApprovalResultEmail">
+		<Action>Send</Action>
+		<Description lang="en">Send internal approval result email</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDAPPROVALEMAIL</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="long" name="Address">workDoc</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" eval="constant" name="Form" type="string">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" name="Subject" type="string" eval="constant">Import Approval Status</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailImportApprovalStatus</Parameter>
+	</Activity>
+
+	<!--******************** Start of Class promotion Activities*****************************-->
+	<Activity Name="CutoverItemMaster">		
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Update event for Class Promotion Load and Import</Description>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="constant">Class_CutOver_IM_Imort</Parameter>
+		
+	</Activity>
+	<Activity Name="CutoverHierarchyRoles">		
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Update event for Class Promotion Load and Import</Description>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="constant">Class_CutOver_HR_Imort</Parameter>
+	</Activity>
+	<Activity Name="CutoverHierarchyInformation">		
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Update event for Class Promotion Load and Import</Description>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="constant">Class_CutOver_HI_Imort</Parameter>
+	</Activity>
+	<Activity Name="CutoverLinkMVL">		
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Update event for Class Promotion Load and Import</Description>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="constant">Class_CutOver_Link_Imort</Parameter>
+	</Activity>
+	<Activity Name="InitiateClassPromotion">
+		<Action>InitiateSubFlow</Action>
+		<Description>Initiate flow for class promotion</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SPAWNWORKFLOW</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="ProcessID">MDRITME1/workflow/CP/wf_cp_UploadDatasource</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">inDoc</Parameter>
+		<Parameter direction="in" type="boolean" eval="constant" name="SubflowFlag">true</Parameter>
+		<Parameter direction="out" name="errorFlag" type="boolean" eval="variable">errorFlag</Parameter>
+	</Activity>
+	<!--********************End of Class Promotion Activities********************************-->
+	<Activity Name="SourceSuccessEmail">
+		<Action>Send</Action>
+		<Description lang="en">Send Success email</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDSUCCESSEMAIL</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">inDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Address">inDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailSourceMessage</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Form">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">inDoc</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="OperationStatus">succeeded</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Message">The catalog upload/import operation succeeded.</Parameter>
+	</Activity>
+	<Activity Name="SourceErrorEmail">
+		<Action>Send</Action>
+		<Description lang="en">Send Error email</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDERROREMAIL</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">inDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Address">inDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailSourceMessage</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Form">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">inDoc</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="OperationStatus">failed</Parameter>
+		<Parameter direction="in" eval="property" type="string" name="Message">error.Text</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToSuccess">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event status to Success/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">SUCCESS</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event status to Error/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">ERROR</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError2">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event status to Error/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">ERROR</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToTimedout">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event status to Timedout/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">TIMEOUT</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TIMEOUT</Parameter>
+	</Activity>
+
+	<Activity Name="RejectDueToWorkflowError">
+		<Action>Send</Action>
+		<Description lang="en">Error occured during workflow processing</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">REJECTDUETOWFERROR</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">inDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="long" name="Address">inDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailUploadImportWorkflowError</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Form">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">inDoc</Parameter>
+	</Activity>
+	<!-- Handle cancellation of event -->
+	<Activity Name="SetStatusToCancel">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event status to Cancelled/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">CANCELLED</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+	</Activity>
+
+	<Activity Name="InternalApprovalMoveToNext1">
+		<Action>StateTransition</Action>
+		<Description>Set workflow to next step</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">STATETRANSITION</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="ConversationAction" direction="in" type="string" eval="constant">connect</Parameter>
+		<Parameter name="CheckTransition" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="MoveTo" direction="in" type="string" eval="rule" source="Import Approval">workDoc</Parameter>
+		<Parameter name="MoveTo" direction="in" type="string" eval="constant">Done</Parameter>
+		<Parameter name="Key1" direction="in" type="string" eval="constant">ImportMasterCatalogInternalApproval</Parameter>
+		<Parameter name="Key2" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/ThisDocID/DocID/IDNumber/text()">workDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+		<Parameter name="ConversationState" direction="out" eval="variable" type="string">InternalApprovalNextState</Parameter>
+		<Parameter name="CouldMove" direction="out" eval="variable" type="boolean">approvalCouldMove</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsUnConfirmed">
+		<Action>UpdateRecordState</Action>
+		<Description>Set record status as confirmed</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+		<Parameter name="Status" direction="in" type="string" eval="constant">UNCONFIRMED</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+	</Activity>
+	<Activity Name="HandleException">
+		<Action>HandleException</Action>
+		<Description lang="en">Handle Exception</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" eval="constant" type="string">HANDLEEXCEPTION</Parameter>
+		<Parameter name="BackupLogs" direction="in" eval="constant" type="string">F</Parameter>
+		<Parameter name="NoOfBackup" direction="in" eval="constant" type="long">5</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">CIM_errorDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Error_Severity">WARNING</Parameter>
+		<Parameter direction="in" type="string" eval="variable" name="StackTraceDesc">Stacktrace_Out</Parameter>
+		<Parameter direction="in" type="string" eval="variable" name="FailedActivity">FailedActivity_Out</Parameter>
+	</Activity>
+
+	<Activity Name="PublishToBW">
+		<Action>SendProtocolMessage</Action>
+		<Description>Publishes the error message to KLEAR for logging</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" eval="constant" type="string">JMS</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">Q_ECM_INTGR_POSTKLEAR</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">CIM_errorDoc</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@origin='Receiver' and @role='Supplier']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@origin='Sender' and @role='Supplier']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="ChannelOrganizationName" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@origin='Sender' and @role='Supplier']/Organization/PartyID/PartyName/text()">CIM_errorDoc</Parameter>
+		<Parameter name="TradingPartnerCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@origin='Receiver' and @role='Supplier']/Credential[@domain='GLN']/Identity/text())[last()]">CIM_errorDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDMESSAGE</Parameter>
+	</Activity>
+	<!-- * * * * * * * * * * * * * * * * * * * *  T R A N S I T I O N S * * * * * * * * * * * * * * * * -->
+
+
+
+	<!-- Same workflow is used for data source upload and import. -->
+	<Transition FromActivity="AddMsgInfoToEvent" ToActivity="CutoverHierarchyInformation">
+		<Description lang="en">If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter direction="in" name="HierarchyInformationDS" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/RevisionID/BaseName/text()">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+                result = (HierarchyInformationDS != null && HierarchyInformationDS.equals("DM_HIERARCHY_INFORMATION"));
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="AddMsgInfoToEvent" ToActivity="CutoverItemMaster">
+		<Description lang="en">If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter direction="in" name="ItemMasterDS" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/RevisionID/BaseName/text()">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+                result = (ItemMasterDS != null && ItemMasterDS.equals("DM_ITEM_MASTER"));
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="AddMsgInfoToEvent" ToActivity="CutoverLinkMVL">
+		<Description lang="en">If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter direction="in" name="LinkMVLDS" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/RevisionID/BaseName/text()">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+                result = (LinkMVLDS != null && LinkMVLDS.equals("DM_LINK_MVL"));
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="AddMsgInfoToEvent" ToActivity="CutoverHierarchyRoles">
+		<Description lang="en">If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter direction="in" name="HierarchyRolesDS" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/RevisionID/BaseName/text()">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+                result = (HierarchyRolesDS != null && HierarchyRolesDS.equals("DM_HIERARCHY_ROLES"));
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CutoverItemMaster" ToActivity="InitiateClassPromotion">
+		<Description lang="en">If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter direction="in" name="ItemMasterDS" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/RevisionID/BaseName/text()">inDoc</Parameter>
+			<Parameter direction="in" name="ItemContentDS" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[2]/RevisionID/BaseName/text()	">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+                result = (ItemMasterDS != null && ItemMasterDS.equals("DM_ITEM_MASTER") 
+				&& ItemContentDS!=null && ItemContentDS.equals("DM_ITEM_CONTENT_DS"));
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InitiateClassPromotion" ToActivity="PrepareForImportCatalog"/>
+	<Transition FromActivity="CutoverHierarchyInformation" ToActivity="UploadDataSource"/>
+	<Transition FromActivity="CutoverLinkMVL" ToActivity="UploadDataSource"/>
+	<Transition FromActivity="CutoverHierarchyRoles" ToActivity="UploadDataSource"/>
+
+	<Transition FromActivity="AddMsgInfoToEvent" ToActivity="PrepareForImportCatalog">
+
+		<Description lang="en">If type is Import only, skip directly to Import</Description>
+		<Rule>
+			<Parameter direction="in" name="subdoctype" type="string" eval="xpath" source="/Message/Body/Document/@subtype">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">CatSourceImport</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(subdoctype, inputParamString);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Data source upload needs to be done first -->
+	<Transition FromActivity="AddMsgInfoToEvent" ToActivity="UploadDataSource"/>
+	<Transition FromActivity="UploadDataSource" ToActivity="SourceErrorEmail">
+		<Description lang="en">If process record return no error then create edit workitem</Description>
+		<Rule>
+			<Parameter name="totalRowsAttempted" type="long" eval="variable" direction="in">totalRowsAttempted</Parameter>
+			<Parameter name="totalRowsWithErrors" type="long" eval="variable" direction="in">totalRowsWithErrors</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfCatsourceTransition.uploadDataSourceToSourceErrorEmail(totalRowsAttempted, totalRowsWithErrors);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Datasource Upload failed, end the workflow -->
+	<Transition FromActivity="SourceErrorEmail" ToActivity="SetStatusToError"/>
+	<!-- Upload was successful, inform the user and continue -->
+	<Transition FromActivity="UploadDataSource" ToActivity="SourceSuccessEmail">
+		<Description lang="en">If type is Upload only then Import Catalog.</Description>
+		<Rule>
+			<Parameter direction="in" name="subdoctype" type="string" eval="xpath" source="/Message/Body/Document/@subtype">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">CatSourceLoad</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(subdoctype, inputParamString);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- End of data source upload workflow -->
+	<Transition FromActivity="SourceSuccessEmail" ToActivity="SetStatusToSuccess"/>
+	<!-- Import specific workflow starts now -->
+	<Transition FromActivity="UploadDataSource" ToActivity="PrepareForImportCatalog"/>
+
+	<!--  * * * * * *  TRANSITIONS FOR IMPORT RELATIONSHIP ONLY AND CLASSIFY ONLY   * * *  [STARTED] * * * *  -->
+
+	<Transition FromActivity="PrepareForImportCatalog" ToActivity="ExtractRelationship">
+		<Description lang="en">If only import relationships.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="ImportRelationshipsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ImportRelationshipsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">true</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(ImportRelationshipsOnly, inputParamString);
+                ]]>
+            </Condition>
+		</Rule>
+	</Transition>
+
+	<Transition FromActivity="PrepareForImportCatalog" ToActivity="ManualClassification">
+		<Description lang="en">In case of Classify Records Only</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="ClassifyRecordsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ClassifyRecordsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">true</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(ClassifyRecordsOnly, inputParamString);
+                ]]>
+            </Condition>
+		</Rule>
+	</Transition>
+
+	<Transition FromActivity="ExtractRelationship" ToActivity="ManualClassification">
+		<Description lang="en">Incase of Classify Records Or Direct Import</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="ImportRelationshipsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ImportRelationshipsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" type="string" name="ClassifyRecordsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ClassifyRecordsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">true</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh"><![CDATA[
+					if(com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(ImportRelationshipsOnly, inputParamString)){
+						if (com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(ClassifyRecordsOnly, inputParamString)){
+							result = true ;
+						}
+						else{
+							result = false ;
+						}
+					}
+					else{
+						result = true ;
+					}
+                ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+
+	<Transition FromActivity="ExtractRelationship" ToActivity="PurgeStaging">
+		<Description lang="en">In case of Import Relationship.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="ImportRelationshipsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ImportRelationshipsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">true</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(inputParamString,ImportRelationshipsOnly);
+                ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+
+	<Transition FromActivity="ManualClassification" ToActivity="PurgeStaging">
+		<Description lang="en">In case of Classify only Or Import Relationship with Classiffy only.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="ImportRelationshipsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ImportRelationshipsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" type="string" name="ClassifyRecordsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ClassifyRecordsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">true</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsEitherString(inputParamString,ImportRelationshipsOnly,ClassifyRecordsOnly);
+                ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+
+	<!-- Just set to success -->
+	<Transition FromActivity="PurgeStaging" ToActivity="SetStatusToSuccess">
+		<Description lang="en">In Case of Import relationships and classify Only.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="ImportRelationshipsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ImportRelationshipsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" type="string" name="ClassifyRecordsOnly" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='ClassifyRecordsOnly']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">true</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsEitherString(inputParamString,ImportRelationshipsOnly,ClassifyRecordsOnly);
+                ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+
+	<!--  * * * * * *  TRANSITIONS FOR IMPORT RELATIONSHIP ONLY AND CLASSIFY ONLY   * * *  [END] * * * *  -->
+
+
+	<!-- If there are no records imported, no need to continue. Not informing user by email?  -->
+	<Transition FromActivity="PrepareForImportCatalog" ToActivity="ImportCatalog"/>
+	<Transition FromActivity="ImportCatalog" ToActivity="RejectDueToWorkflowError">
+		<Description lang="en">If there are no records to process, end with error.</Description>
+		<Rule>
+			<Parameter name="recordsSuccess" type="long" eval="variable" direction="in">recordsSuccess</Parameter>
+			<Parameter name="catalogsWithError" type="long" eval="variable" direction="in">catalogsWithError</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfCatsourceTransition.importCatalogToSetStatusToError(recordsSuccess, catalogsWithError);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ImportCatalog" ToActivity="SetStatusToSuccess">
+		<Description lang="en">If there are no records to process, end with error.</Description>
+		<Rule>
+			<Parameter name="recordsSuccess" type="long" eval="variable" direction="in">recordsSuccess</Parameter>
+			<Parameter name="catalogsWithError" type="long" eval="variable" direction="in">catalogsWithError</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfCatsourceTransition.importCatalogToSetStatusToSuccess(recordsSuccess, catalogsWithError);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+
+	<Transition FromActivity="ImportCatalog" ToActivity="DeleteRecord">
+		<Description lang="en">Delete Record after import</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="Incremental" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='Incremental']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">No</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(Incremental, inputParamString);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+
+	<!-- Some records were imported, create bundles out of these. If bundling option is not specified, this
+
+    woul just create a record collection -->
+	<!-- ************************* Handle direct load first ************************************ -->
+	<Transition FromActivity="ImportCatalog" ToActivity="ExtractRelationship"/>	
+	<Transition FromActivity="ManualClassification" ToActivity="ReclassifyRecordsForImport"/>
+	<Transition FromActivity="DeleteRecord" ToActivity="ExtractRelationship"/>
+	<Transition FromActivity="ExtractRelationship" ToActivity="ReclassifyRecordsForImport"/>
+	<Transition FromActivity="ReclassifyRecordsForImport" ToActivity="PurgeStaging"/>
+	<Transition FromActivity="PurgeStaging" ToActivity="ManageRecordCollectionDirectLoad">
+		<Description lang="en">Create dummy bundles.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="SplitImportBatch" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='SplitImportBatch']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Direct Load</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(SplitImportBatch, inputParamString);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ManageRecordCollectionDirectLoad" ToActivity="UpdateRecordStateAsRejected5">
+		<Description lang="en">Check if there are any rejected records.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">rejectRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="UpdateRecordStateAsRejected5" ToActivity="EvaluateRulebaseDirectLoad">
+		<Description lang="en">Check if there are any good records to validate.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- No good records, end the workflow -->
+	<Transition FromActivity="UpdateRecordStateAsRejected5" ToActivity="SetStatusToError"/>
+	<Transition FromActivity="ManageRecordCollectionDirectLoad" ToActivity="EvaluateRulebaseDirectLoad">
+		<Description lang="en">Check if there are any good records to validate.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- No good records, end the workflow -->
+	<Transition FromActivity="ManageRecordCollectionDirectLoad" ToActivity="SetStatusToError"/>
+	<Transition FromActivity="EvaluateRulebaseDirectLoad" ToActivity="UpdateRecordStateAsRejected3">
+		<Description lang="en">Transition if success list is null.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- At this point, there is atleast one record to approve -->
+	<Transition FromActivity="EvaluateRulebaseDirectLoad" ToActivity="InternalApprovalMoveToFirst"/>
+	<!-- ********** Direct load handling now joins the main workflow ************* -->
+	<Transition FromActivity="PurgeStaging" ToActivity="ManageRecordCollection"/>
+	<!-- Lets first eliminate the records which failed bundling. -->
+	<!--Go to rejected 2 only if rejectRecordList is not null and it has atleast one record. -->
+	<Transition FromActivity="ManageRecordCollection" ToActivity="UpdateRecordStateAsRejected2">
+		<Description lang="en">Transition if null.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">rejectRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Now check if there is atleast one bundle. Otherwise, end the workflow -->
+	<Transition FromActivity="UpdateRecordStateAsRejected2" ToActivity="SetStatusToError">
+		<Description lang="en">Transition if null.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Not likely to happen that you have no records in reject list and none in success list -->
+	<Transition FromActivity="ManageRecordCollection" ToActivity="SetStatusToError">
+		<Description lang="en">Transition if there not even one bundle created.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Continue after rejecting the records which failed validation as there is atleast one valid bundle -->
+	<Transition FromActivity="UpdateRecordStateAsRejected2" ToActivity="EvaluateRuleBase"/>
+	<!-- At this point we are sure that there is at least one bundle to be processed. Validate it -->
+	<!-- Continue with those records which were bundled successfully -->
+	<!-- No bundle to reject, go straight to validations-->
+
+	<Transition FromActivity="ManageRecordCollection" ToActivity="UpdateEventForHierarchyReject">
+		<Description lang="en">Add input map and spawn workflow</Description>
+		<Rule>
+			<Parameter direction="in" name="HierarchyRejectCICMap" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/InputMap/RevisionID/BaseName/text()">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+					result = (HierarchyRejectCICMap != null && (HierarchyRejectCICMap.equals("HIERARCHY_REJECT_IM")));					
+                ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="UpdateEventForHierarchyReject" ToActivity="HierarchyCICRejectSpawnFlow"/>
+	<Transition FromActivity="HierarchyCICRejectSpawnFlow" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="ManageRecordCollection" ToActivity="EvaluateRuleBase"/>
+	<!-- If no records passed validation, reject all and end the workflow. Not informing user?-->
+	<Transition FromActivity="EvaluateRuleBase" ToActivity="UpdateRecordStateAsRejected3">
+		<Description lang="en">Transition if success list is null.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- All records rejected, end the workflow -->
+	<Transition FromActivity="UpdateRecordStateAsRejected3" ToActivity="SetStatusToError"/>
+	<!-- At this point, there is atleast one record to approve -->
+	<Transition FromActivity="EvaluateRuleBase" ToActivity="InternalApprovalMoveToFirst"/>
+	<Transition FromActivity="InternalApprovalMoveToFirst" ToActivity="ImpInternalApprovalWorkitem"/>
+	<Transition FromActivity="ImpInternalApprovalWorkitem" ToActivity="ImpInternalApprovalWorkitem">
+		<Description lang="en">Test that all created Import Master Catalog approval workitems have been completed or someone has rejected workitem.</Description>
+		<Rule>
+			<Parameter name="wicreated" type="boolean" eval="variable" direction="in">approvalFlag</Parameter>
+			<Parameter name="numberCreated" type="long" eval="variable" direction="in">NumberCreated</Parameter>
+			<Parameter name="numberCompleted" type="long" eval="variable" direction="in">NumberCompleted</Parameter>
+			<Parameter name="response" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<!-- Parameter name="response" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter -->
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.responseDoesNotEqualReject(wicreated, numberCreated, numberCompleted, response);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ImpInternalApprovalWorkitem" ToActivity="InternalApprovalMoveToNext"/>
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="ImpInternalApprovalWorkitem">
+		<Description lang="en">If not done, loop</Description>
+		<Rule>
+			<Parameter name="state" type="string" eval="variable" direction="in">InternalApprovalNextState</Parameter>
+			<Parameter name="status" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<!-- Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter -->
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.statusEqualsAccept(state, status);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- If not approved, reject the batch and continue -->
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="UpdateRecordStateAsRejected">
+		<Description lang="en">If accept, send catalog.</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Reject</Parameter>
+			<!-- Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter -->
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(status, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- Inform user of approval/ rejection -->
+	<Transition FromActivity="UpdateRecordStateAsRejected" ToActivity="InternalApprovalResultEmail"/>
+	<!-- After approval, reject those records which failed the validation -->
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="UpdateRecordStateAsRejected1">
+		<Description lang="en">Transition if there are any records which failed validations.</Description>		
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList1</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- If no workitem, then reject the failed bundles.-->
+	<!--Transition FromActivity="ImpInternalApprovalWorkitem" ToActivity="UpdateRecordStateAsRejected1">
+		<Description lang="en">Transition if there are any records which failed validations.</Description>
+		<Rule>
+			<Parameter direction="in" name="rc" type="recordlist" eval="variable">workRecordList1</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+					com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotNull(rc);
+                ]]></Condition>
+		</Rule>
+	</Transition-->
+	<Transition FromActivity="InternalApprovalMoveToNext" ToActivity="InternalApprovalResultEmail"/>
+	<!-- Send email first, before spawn -->
+	<Transition FromActivity="UpdateRecordStateAsRejected1" ToActivity="InternalApprovalResultEmail"/>
+	<!-- End of workflow if direct load. -->
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="InternalApprovalMoveToNext1">
+		<Description lang="en">If Direct load, end of workflow.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" type="string" name="SplitImportBatch" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/Extension[@name='SplitImportBatch']/Value/text()">inDoc</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Direct Load</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(SplitImportBatch, inputParamString);
+             ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="InternalApprovalMoveToNext1" ToActivity="UpdateRecordStateAsUnConfirmed">
+		<Rule> 
+			<Parameter direction="in" eval="xpath" type="string" name="inputMapName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/InputMap/RevisionID/BaseName/text()">inDoc</Parameter> 
+			<Parameter name="result" type="boolean" direction="out"/> 
+<Condition format="bsh"> <![CDATA[ result = (inputMapName.equalsIgnoreCase("CLASS_E_SUNPROTECTIONFACTORVALUESPF_UNCONFIRMED_IM")
+|| inputMapName.equalsIgnoreCase("CLASS_E_CANSNESTFOREASYSTACKING_UNCONFIRMED_IM")
+|| inputMapName.equalsIgnoreCase("CLASS_E_MEATFLAVOR_MVL_UNCONFIRMED_IM")
+|| inputMapName.equalsIgnoreCase("CLASS_E_VLUADDINGRED4CUSTMRBNFT_MVL_UNCONFIRMED_IM")
+||inputMapName.equalsIgnoreCase("CLASS_E_ISANIMALGRASSFED_UNCONFIRMED_IM") 
+|| inputMapName.equalsIgnoreCase("CLASS_E_ANIMALRAISEDINFREERANGEENV_UNCONFIRMED_IM") 
+|| inputMapName.equalsIgnoreCase("CLASS_E_ANIMALRAISEDINCAGEFREEENV_UNCONFIRMED_IM") 
+|| inputMapName.equalsIgnoreCase("CLASS_E_ANIMALFEEDTYPEALLVEGETABLE_UNCONFIRMED_IM")
+|| inputMapName.equalsIgnoreCase("CLASS_E_PMAPLUNUMBER_MVL_UNCONFIRMED_IM")
+|| inputMapName.equalsIgnoreCase("CLASS_E_LEVELOFNONGMOCLAIM_UNCONFIRMED_IM")
+); ]]> </Condition> 
+		</Rule>
+	</Transition>	
+	<Transition FromActivity="InternalApprovalMoveToNext1" ToActivity="UpdateRecordStateAsConfirmed"/>
+	<!-- Spawn workflows if approval was obtained. -->
+
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="SpawnWorkflow">
+		<Description lang="en">If accept, send catalog.</Description>
+		<Rule>
+			<Parameter name="status" type="string" eval="variable" direction="in">FormResult</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Accept</Parameter>
+			<!-- Parameter name="status" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/CatalogActionHeaderAck[last()]/AcknowledgmentCode/Code/Value/text()" direction="in">workDoc</Parameter -->
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNullOrEqualsIgnoreCase(status, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<!-- If user did not approve of batch, all products are rejected. Send email and end the event -->
+	<Transition FromActivity="InternalApprovalResultEmail" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="UpdateRecordStateAsUnConfirmed" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="UpdateRecordStateAsConfirmed" ToActivity="SetStatusToTimedout">
+		<Description lang="en">If there Update Product Status process is TimeOut, end with Timedout.</Description>
+		<Rule>
+			<Parameter name="nextCommand" type="string" eval="variable" direction="in">UpdateProductStatusNextCommand</Parameter>
+			<Parameter direction="in" name="inputParamString1" eval="constant" type="string">TIMEOUT</Parameter>
+			<Parameter direction="in" name="inputParamString2" eval="constant" type="string">ABORT</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsEitherString(nextCommand, inputParamString1, inputParamString2);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="UpdateRecordStateAsConfirmed" ToActivity="SetStatusToSuccess"/>
+
+	<Transition FromActivity="SpawnWorkflow" ToActivity="SetStatusToSuccess"/>
+	<!-- ERROR Handling Transitions -->
+	<Transition type="error" FromActivity="Any" ToActivity="RejectDueToWorkflowError"/>
+	<Transition FromActivity="RejectDueToWorkflowError" ToActivity="HandleException"/>
+	<Transition FromActivity="HandleException" ToActivity="PublishToBW"/>
+	<Transition FromActivity="PublishToBW" ToActivity="SetStatusToError2"/>
+	
+	<!-- CANCEL transitions -->
+	<Transition type="cancel" FromActivity="Any" ToActivity="UpdateRecordStateAsCancelled"/>
+	<Transition FromActivity="UpdateRecordStateAsCancelled" ToActivity="SetStatusToCancel"/>
+</Workflow>
+something added here !!!  

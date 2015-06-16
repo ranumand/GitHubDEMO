@@ -1,0 +1,226 @@
+<SCRIPT id="customInitId" language="JavaScript" type="text/javascript">    
+function customUpdateTable(){
+	if(document.getElementById("idbrowserepository")){
+	//Hides configurelink for only Item Master but not other repositories. MER-6337
+	var configure = document.getElementById("configureScreen");
+	var configurelink = document.getElementById("configureLink");
+	var svalue = document.getElementById("selectRepo").value;
+	var optionsarray = document.getElementsByTagName("option");
+	for(var ocnt=0; ocnt < optionsarray.length; ocnt ++){
+
+		if(optionsarray[ocnt].value == svalue){
+			if(optionsarray[ocnt].innerText == "Item Master"){
+				configure.style.display = "none";
+				configurelink.style.display = "none";
+			}else{
+				configure.style.display = "inline";
+				configurelink.style.display = "inline";
+			}
+			ocnt = optionsarray.length;
+		}
+	}
+	}
+	//End Hiding Configure Link
+			try {
+			var resultFrame = document.getElementById("resultsFrame");
+			if( resultFrame == null ){
+				return;
+				}
+				var returlBrowser = document.getElementById("hiddenbrowseURL");
+	var repoSelected = jQuery("#selectRepo option:selected", parent.top.document).text();
+	//Start adding Atlas Link to Search Results
+	if(!(repoSelected == 'Item Master' ||  repoSelected == 'ITEM_MASTER' ))
+		return;
+	
+		var table = resultFrame.contentWindow.document.getElementById('gridTblRows');
+    var rowLength = table.rows.length;
+
+
+    for (var i = 0; i < rowLength; i += 1) {
+        var row = table.rows[i];
+        if( row.id == "noDataTR" || row.id == "noResult" || row.id == "noCriteriaTR")
+    	    continue;
+        var cellLength = row.cells.length;    
+
+        // your code goes here, looping over every row.
+        // cells are accessed as easy    
+	var cell1 = row.cells[0];
+	var pid =  jQuery(cell1).find('input[id="hiddenid"]').val();
+	var pidext =  jQuery(cell1).find('input[id="hiddenidext"]').val();
+	var pver =  jQuery(cell1).find('input[id="hiddenversion"]').val();
+	 
+	var pkid =  jQuery(cell1).find('input[id="hiddenpkId"]').val();
+	var catalogid =  '94934' ;
+	var catversion =  '1' ;
+ 
+	
+	//MER-1602 Variables for retURL
+	var repoid = resultFrame.contentWindow.document.getElementById('repoId').value;
+	var hiddencriteriapaneshown ="";
+	if(document.getElementById("hiddenCriteriaPaneShown")){
+	hiddencriteriapaneshown = document.getElementById("hiddenCriteriaPaneShown").value;
+	}
+	var hiddenviewallclicked = "";
+	if(document.getElementById("hiddenViewAllClicked")){
+	hiddenviewallclicked = document.getElementById("hiddenViewAllClicked").value;
+	hiddenviewallclicked = "true"//had to set this variable to true for IE.
+	}
+	var hiddenclsfnclicked = "";
+	if(document.getElementById("hiddenclsfnClicked")){
+	hiddenclsfnclicked = document.getElementById("hiddenclsfnClicked").value;
+	}
+	var hiddensearchclicked =  "";
+	if(document.getElementById("hiddenSearchClicked")){
+	hiddensearchclicked = document.getElementById("hiddenSearchClicked").value;
+	}
+	var hiddenselectedcodeid = "";
+	if(document.getElementById("hiddenSelectedCodeId")){
+	hiddenselectedcodeid = document.getElementById("hiddenSelectedCodeId").value;
+	}
+	var hiddenselectedschemeid = "";
+	if(document.getElementById("hiddenSelectedSchemeId")){
+	hiddenselectedschemeid = document.getElementById("hiddenSelectedSchemeId").value;
+	}
+	var hiddenselectedschemeversion = "";
+	if(document.getElementById("hiddenSelectedSchemeVersion")){
+	hiddenselectedschemeversion = document.getElementById("hiddenSelectedSchemeVersion").value;
+	}
+	var hiddenselectedcodename = "";
+	if(document.getElementById("hiddenSelectedCodeName")){
+	hiddenselectedcodename = document.getElementById("hiddenSelectedCodeName").value;
+	}
+	
+	var hiddenclsfnbreadcrumb = "";
+	if(document.getElementById("hiddenClsfnBreadcrumb")){
+	hiddenclsfnbreadcrumb = document.getElementById("hiddenClsfnBreadcrumb").value;
+	}
+	var hiddencriteria = "";//Now this works if this variable is set to blank.
+	var hiddenfedfilter = "";
+	if(document.getElementById("hiddenFEDFilter")){
+	hiddenfedfilter = document.getElementById("hiddenFEDFilter").value;
+	}
+	var currentpagenum = "";
+	if(resultFrame.contentWindow.document.getElementById("currentPageNum")){
+	currentpagenum = resultFrame.contentWindow.document.getElementById("currentPageNum").value;
+	}
+	var pagesize = "";
+	if(resultFrame.contentWindow.document.getElementById("pageSize")){
+	pagesize = resultFrame.contentWindow.document.getElementById("pageSize").value;
+	}
+	var gotopagenum = "";
+	if(resultFrame.contentWindow.document.getElementById("goToPageNum")){
+	gotopagenum = resultFrame.contentWindow.document.getElementById("goToPageNum").value;
+	}
+	var nextpagenum = "";
+	if(resultFrame.contentWindow.document.getElementById("nextPageNum")){
+	nextpagenum = resultFrame.contentWindow.document.getElementById("nextPageNum").value;
+	}
+	var pagerequest = "";
+	if(resultFrame.contentWindow.document.getElementById("pageRequest")){
+	pagerequest = resultFrame.contentWindow.document.getElementById("pageRequest").value;
+	}
+	var includefedrelatedchildren = "";
+	if(document.getElementById("includeFEDrelatedChildren")){
+	includefedrelatedchildren = document.getElementById("includeFEDrelatedChildren").value;
+	}
+	
+	var retURL="";
+	//MER-1602 Create Return URL
+	retURL = "/eml/BrowseRepository%3F%26action%3D%26repoId%3D" + repoid + "%26hiddenCriteriaPaneShown%3D" + hiddencriteriapaneshown +"%26hiddenViewAllClicked%3D" + hiddenviewallclicked + "%26hiddenclsfnClicked%3D" + hiddenclsfnclicked + "%26hiddenSearchClicked%3D" + hiddensearchclicked + "%26hiddenSelectedCodeId%3D" + hiddenselectedcodeid + "%26hiddenSelectedSchemeId%3D" + hiddenselectedschemeid + "%26hiddenSelectedSchemeVersion%3D" + hiddenselectedschemeversion + "%26hiddenSelectedCodeName%3D" + hiddenselectedcodename + "%26hiddenClsfnBreadcrumb%3D"+ hiddenclsfnbreadcrumb + "%26hiddenCriteria%3D" +hiddencriteria + "%26hiddenFEDFilter%3D" + hiddenfedfilter + "%26currentPageNum%3D" + currentpagenum + "%26pageSize%3D" + pagesize + "%26goToPageNum%3D" + gotopagenum + "%26nextPageNum%3D" + nextpagenum + "%26pageRequest%3D" + pagerequest + "&includeFEDrelatedChildren=&Direction=NEXT&subaction=";
+
+	//MER-1602 Add Return URL to path
+	var path = "AtlasSearchClient?productid=" + pid +"&pk="+pkid+"&modversion="+pver +'&catalogid='+catalogid+'&retURL='+ retURL;
+	//END 1602 Code to Create Return URL
+
+
+	var chtml = "<span style='text-align:right' onclick=\"parent.window.location='"+path+"'\"><A href='#'><img border='0' src='images/Mercury_Atlas.png' alt='Atlas Screen' width='13' height='13'></A></span>";
+	
+	var gg = row.cells[1].innerHTML + " " + chtml;
+	row.cells[1].innerHTML=gg;
+    }
+} catch(eee){
+	//alert(eee);
+}
+}
+function customInit(){
+	if(document.getElementById("customTemplateName")){
+	removeRelationshipNodes();
+	changeIDExtCols();
+	workitemValidValues();
+	}
+	//hide classification scheme button per UAT meeting June 4 2013
+	if(document.getElementById("createCSLabel")){
+	var cslink = document.getElementById("createCSLabel");
+	var cslink2 = document.getElementById("ProductSearch_3");
+	cslink.style.display = "none";
+	cslink2.style.display = "none";
+	}
+	
+	//hide classification scheme button per UAT meeting June 4 2013
+	if(document.getElementById("Price_Group_Of_Item"))
+	{								
+		var gridContainerId = document.getElementById("relGridContainerPrice_Group_Of_Item").childNodes[0].id;
+		var gridChildNodes = document.getElementById(gridContainerId).childNodes;				
+		for (var i=0; i < gridChildNodes.length; i++) {			
+			if(gridChildNodes[i].className == "toolbar"){				
+			  var toolbarChildNodes = gridChildNodes[i].childNodes;			  
+			  for (var j=0; j < toolbarChildNodes.length; j++){
+				if(toolbarChildNodes[j].nodeName.toLowerCase()=="UL".toLowerCase()){					
+					var ulChildNodes = toolbarChildNodes[j].childNodes;
+					for (var k=0; k < ulChildNodes.length; k++){					
+						if(ulChildNodes[k].id=="editablegridAddButton"){							
+							ulChildNodes[k].className="toolbarButtonDisabled";														
+							ulChildNodes[k].removeAttribute("btntype");							
+						} else if(ulChildNodes[k].id=="editablegridRemoveButton"){							
+							ulChildNodes[k].className="toolbarButtonDisabled";							
+							ulChildNodes[k].removeAttribute("btntype");							
+						}
+					}										
+				}
+			  }
+			}
+		}					
+	}	
+	
+	if(document.getElementById("Parity_Group_Of_Item")){						
+		var gridContainerId = document.getElementById("relGridContainerParity_Group_Of_Item").childNodes[0].id;
+		var gridChildNodes = document.getElementById(gridContainerId).childNodes;				
+		for (var i=0; i < gridChildNodes.length; i++) {			
+			if(gridChildNodes[i].className == "toolbar"){				
+			  var toolbarChildNodes = gridChildNodes[i].childNodes;			  
+			  for (var j=0; j < toolbarChildNodes.length; j++){
+				if(toolbarChildNodes[j].nodeName.toLowerCase()=="UL".toLowerCase()){					
+					var ulChildNodes = toolbarChildNodes[j].childNodes;
+					for (var k=0; k < ulChildNodes.length; k++){					
+						if(ulChildNodes[k].id=="editablegridAddButton"){							
+							ulChildNodes[k].className="toolbarButtonDisabled";														
+							ulChildNodes[k].removeAttribute("btntype");							
+						} else if(ulChildNodes[k].id=="editablegridRemoveButton"){							
+							ulChildNodes[k].className="toolbarButtonDisabled";							
+							ulChildNodes[k].removeAttribute("btntype");							
+						}
+					}										
+				}
+			  }
+			}
+		}					
+	}
+	
+	return; // Due to changes in 8.3.0 HF4 onload functionality of resultFrame is nullified.
+
+}
+function expCollapse(TwistieImage, ItemToHide){
+		try{
+			elem = document.getElementById(ItemToHide);
+			if(elem.style.display!="none"){
+				elem.style.display = "none";
+				TwistieImage.src = "/eml/images/false.gif";
+			}else{
+				elem.style.display = "";
+				TwistieImage.src = "/eml/images/true.gif";
+			}
+		}catch(error){}
+	}
+
+</SCRIPT>
+

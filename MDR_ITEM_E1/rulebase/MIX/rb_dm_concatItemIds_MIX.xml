@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will gets the highest hierarhcy Designation
+-->
+
+	<name>GetItemIDs</name>
+	<description>Get highest hierarhcy Designation</description>
+	<declare usage="input">
+		<var>OrganizationId</var>
+		<datatype type="string"/>
+	</declare>
+
+
+	<declare usage="output">
+		<var>concatRecList</var>
+		<datatype type="string"/>
+	</declare>
+
+	<declare usage="output">
+		<var>delconcatRecList</var>
+		<datatype type="string"/>
+	</declare>
+
+	<declare usage="input">
+		<var>deltedRecList1</var>
+
+	</declare>
+	<declare usage="input">
+		<var>PublishedGTIN</var>
+	</declare>
+	<declare usage="output">
+		<var>recordstate</var>
+		<datatype type="string"/>
+	</declare>	
+	<constraint>
+		<name>getPublishGTINRecordState</name>
+		<description>getPublishGTINRecordState</description>
+		<condition>
+			<defined>
+				<var>PublishedGTIN</var>
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>recordstate</var>				
+				<op func="fetchRecordState">
+					<var>PublishedGTIN</var>
+					<const type="string">ITEM_MASTER</const>
+					<var>OrganizationId</var>					
+				</op>
+			</assign>
+		</action>
+	</constraint>
+
+
+
+	<constraint>
+		<name>concatDeleteRecList</name>
+		<description>Check if GTIN exist in PID as LV</description>
+		<condition>
+			<defined>
+				<var>deltedRecList1</var>
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>concatRecList</var>
+				<op func="makeString">
+					<var>deltedRecList1</var>			
+				</op>
+			</assign>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<name>setfordelconcatRecList</name>
+		<description>setfordelconcatRecList</description>
+		<condition>		
+			<defined>
+				<var>deltedRecList1</var>			
+			</defined>		
+		</condition>
+		<action>
+			<assign>
+				<var>delconcatRecList</var>
+				<var>concatRecList</var>
+			</assign>
+		</action>
+		<action>
+			<assign>
+				<var>delconcatRecList</var>
+				<const type="string">dummy</const>
+			</assign>
+		</action>
+	</constraint>
+
+</rulebase>

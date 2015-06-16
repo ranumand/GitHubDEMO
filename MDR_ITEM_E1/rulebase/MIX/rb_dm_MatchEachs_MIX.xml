@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This rulebase will be called to check if the SVITEM exist in PID-->
+
+<rulebase metaversion="0.1">
+	<name>MatchEachs</name>			
+	<description>Matching PID Eachs</description>
+
+	<declare usage="input">
+		<var>PVItemID</var>
+		<datatype type="string"/>
+	</declare>
+	
+	<declare usage="input">
+		<var>allBaseGtin</var>
+		<datatype type="arraylist"/>
+	</declare>
+	
+
+	<declare usage="output">
+		<var>reviewmsg</var>
+		<datatype type="string"/>
+	</declare>
+	
+ 	
+	<constraint>
+	<!-- This constraint will fetch the all GTIN for a matched PUITEMID(which is matched with PID)
+	and send the array to a rulebase custom function. Rulebase custom function
+	will check if the the child GTIN's matches with PID SV and return an array of matched SV's
+	-->
+		<name>FetchGTIN</name>
+		<description>Fetch the match GTIN and all its child GTIN</description>	
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<eq>
+					<var>PRODUCTID</var>
+					<var>PVItemID</var>
+				</eq>
+			</and>
+		</condition>
+		<action>	
+			<assign>
+				<var>reviewmsg</var>
+				<op func="matchPIDSVs">
+					<var>SESSION/ORGANIZATION_NAME</var>
+					<const type="string">ITEM_MASTER_DS</const>
+					<const type="string">ITEM_CONTENT_DS</const>
+					<var>PVItemID</var>
+					<var>allBaseGtin</var>
+				</op>
+			</assign>
+		</action>	
+	</constraint>
+ 
+  </rulebase>

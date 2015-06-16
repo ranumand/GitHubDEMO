@@ -1,0 +1,869 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1.3">
+	<Owner>TIBCO</Owner>
+	<Name>wf_ConversionCoreFlow_MIX</Name>
+	<Description>CoreCOnversionFlow</Description>
+	<Parameter name="inDoc" direction="in" type="document" eval="variable">1</Parameter>
+	<Parameter name="OutDocument" direction="out" type="document" eval="variable">outDoc</Parameter>
+	<Parameter name="outDoc" direction="out" type="document" eval="variable"/>
+	<Parameter name="workDoc" direction="out" type="document" eval="variable"/>
+	<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+	<Parameter name="outDoc1" direction="out" type="document" eval="variable"/>
+	<Parameter name="rootMostrec" direction="out" type="string" eval="variable"/>
+	<Parameter name="lVDesignationArray" direction="" type="" eval=""/>
+	<Parameter name="matchedLvItemIdArray" direction="" type="" eval=""/>
+	<Parameter name="dummy_flag" direction="out" type="string" eval="variable"/>
+	<Parameter name="Environment_Name3" direction="in" type="string" eval="variable">Environment_Name1</Parameter>
+	<!--CIM Activities-->
+	<Activity Name="SendCICReviewStraglerItem">
+		<Action>InitiateSubFlow</Action>
+		<Description>Call sub flow for to send review for straggler item</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_dm_SendCICReview_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="classStatus" direction="in" type="string" eval="constant">UNDER CONVERSION</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="variable">reviewmsg</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+		<Parameter name="Environment_Name4" direction="in" type="string" eval="variable">Environment_Name3</Parameter>
+		<Parameter name="HierarchyRolesStatus" direction="in" type="string" eval="constant">MDM_REJECT</Parameter>
+		<Parameter name="updateHierarchyRolesBln" direction="in" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<Activity Name="NoOpBeforeVenusMixFlowStarts">
+		<Action>NoOperation</Action>
+		<Description>No Operation before Venus flow starts</Description>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="NoOpCreateLinkMvlandHierarchyInfoRecords">
+		<Action>NoOperation</Action>
+		<Description>No Operation before creating link and hierarchy records</Description>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="CheckCINMessageType1">
+		<Action>NoOperation</Action>
+		<Description>Check for CIN Message </Description>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="CheckSizeChangeOrReasonCode">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Check Size Change or Submission Reason Code</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_CheckCaseDescription_MIX.xml</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc1</Parameter>
+		<Parameter name="isShipper" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name = 'SHIPPER_FLG']/text()">workDoc</Parameter>
+		<Parameter name="IS_CHANGED_CaseDesc" direction="out" eval="variable" type="arraylist">IS_CHANGED_CaseDesc</Parameter>
+		<Parameter name="has_SizeChange" direction="out" eval="variable" type="arraylist">has_SizeChange</Parameter>
+		<Parameter name="HasSubmissionReasonCode" direction="out" eval="variable" type="arraylist">HasSubmissionReasonCode</Parameter>
+		<Parameter name="HasKroEventChange" direction="out" eval="variable" type="arraylist">HasKroEventChange</Parameter>
+	</Activity>
+	<Activity Name="NoOpModifyflow">
+		<Action>NoOperation</Action>
+		<Description>No operation when CaseDescription is not modified</Description>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="PublishToVenusAdapter">
+		<Action>SendProtocolMessage</Action>
+		<Description>Publish payload to JMS queue for consumption by Venus Adapter</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+		<Parameter name="SupplierCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="ChannelOrganizationName" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">inDoc</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">MDM.MDR_ITEM_E1.OUT.ITEM.ADAPTER.V1.SCHEME</Parameter>
+		<Parameter name="MessageID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/@key">inDoc</Parameter>
+		<Parameter name="ExpiryType" direction="in" type="string" eval="constant">RELATIVE</Parameter>
+		<Parameter name="ExpiryDate" direction="in" type="string" eval="constant">0:5:5:0</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDCATALOG</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="ConversationKey" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/pv_item/@gtin">inDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">EAIresponse</Parameter>
+	</Activity>
+	<Activity Name="UpdateHierarchyRoleStatus">
+		<Action>SaveRecord</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SAVERECORD</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+		<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">inDoc</Parameter>
+		<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+		<Parameter name="GenerateExistenceError" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="StandardValidation" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="Overwrite" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="RecordPerAsyncCall" direction="in" type="long" eval="constant">10</Parameter>
+		<Parameter name="ATTRIBUTE_ITEM_HIERARCHY_STATUS_CD" direction="in" type="string" eval="constant">INPROCESS_STRAGGLER</Parameter>
+		<Parameter name="ATTRIBUTE_DISTRIBUTOR_NOTIFICATION_CD" direction="in" type="string" eval="constant">98</Parameter>
+		<Parameter name="RecordsAttempted" direction="out" eval="variable" type="long">attemptedCount</Parameter>
+		<Parameter name="RecordsWithErrors" direction="out" eval="variable" type="long">errorsFound</Parameter>
+	</Activity>
+	<Activity Name="UpdateHierRoleConfirmed">
+		<Action>UpdateRecordState</Action>
+		<Description>Set record status as confirmed</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+		<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">inDoc</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+	</Activity>
+	<Activity Name="SendHierarchyandLinkInfoToJMS">
+		<Action>SendProtocolMessage</Action>
+		<Description>send InDoc to BW JMS queue to create Hierarchy Information and Link records</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+		<Parameter name="SupplierCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter name="ChannelOrganizationName" direction="in" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">inDoc</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">HIERARCHYLINK.OPERATION.OUT_1</Parameter>
+		<Parameter name="MessageID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/@key">inDoc</Parameter>
+		<Parameter name="ExpiryDate" direction="in" type="string" eval="constant">0:1:0:0</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDCATALOG</Parameter>
+		<Parameter name="ExpiryType" direction="in" type="string" eval="constant">RELATIVE</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">HierarchyLinkDoc</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsConfirmed">
+		<Action>UpdateRecordState</Action>
+		<Description>Confirm selected Item Master record versions</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+		<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+	</Activity>
+	<Activity Name="ManageRecordCollectionForCheckHierarchyExists">
+		<Action>ManageRecordCollection</Action>
+		<Description>Construct record list</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">IDENTIFYVERSION</Parameter>
+		<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+		<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+		<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+		<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+		<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+		<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+		<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+		<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+		<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+		<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+		<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+		<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+		<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+		<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+		<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+		<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+		<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+		<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+		<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+		<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+		<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+		<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Contains</Parameter>
+		<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+		<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+		<Parameter name="RelationshipName24" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+		<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+		<Parameter name="BundlingOption" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="RelationshipDepth" direction="in" type="long" eval="constant">-1</Parameter>
+		<Parameter name="OutRecordList" direction="out" eval="variable" type="recordlist">workRecordListNew</Parameter>
+	</Activity>
+	<Activity Name="SendCICAccept">
+		<Action>InitiateSubFlow</Action>
+		<Description>Spawn the subworkflow for Matching attributes in PID and update MDM</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_SendCICSynchronization_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="constant">The Kroger Family Tree class attached to this item is currently assigned to the data migration process.  During this process, only existing items can be accepted if submitted in VIP as an Initial Load.  NEW items cannot be accepted until the completion of the migration step.</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+	</Activity>
+	<Activity Name="GetItemData">
+		<Start/>
+		<Action>GetRecord</Action>
+		<Description>Get record data</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">GETPRODUCTINFO</Parameter>
+		<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+		<Parameter name="RelationshipDepth" direction="in" type="long" eval="constant">-1</Parameter>
+		<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+		<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+		<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+		<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+		<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+		<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+		<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+		<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+		<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+		<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+		<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+		<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+		<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+		<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+		<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+		<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+		<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+		<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+		<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+		<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+		<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+		<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Contains</Parameter>
+		<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+		<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+		<Parameter name="RelationshipName24" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="long" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="checkPVItemExists">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Check If PV GTINID exists in PID</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="ExecutionMode" direction="in" type="string" eval="constant">NoRecords</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_checkPVItemExists_MIX.xml</Parameter>
+		<Parameter name="PVItemID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/pv_item/@gtin">inDoc</Parameter>
+		<Parameter name="operationtype" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()">inDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="ISPVItemExist" direction="out" eval="variable" type="boolean">ISPVItemExist</Parameter>
+		<Parameter name="reviewmsg" direction="out" eval="variable" type="string">reviewmsg</Parameter>
+	</Activity>
+	<Activity Name="fetchAllEachs">
+		<Action>EvaluateRuleBase</Action>
+		<Description>fetch all eachs</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_checkPVItemExists_MIX.xml</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="allBaseGtin" direction="out" eval="variable" type="arraylist">allBaseGtin1</Parameter>
+	</Activity>
+	<Activity Name="checkContainsExists">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Check contains for SVGTIN in PID</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_dm_MatchEachs_MIX.xml</Parameter>
+		<Parameter name="RemoveRecord" direction="in" type="string" eval="constant">NONE</Parameter>
+		<Parameter name="matchedLVGtin" direction="in" type="string" eval="variable">matchedLvItemId</Parameter>
+		<Parameter name="PVItemID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/pv_item/@gtin">inDoc</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="allBaseGtin" direction="in" type="arraylist" eval="variable">allBaseGtin1</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="reviewmsg" direction="out" eval="variable" type="string">reviewmsg</Parameter>
+	</Activity>
+	<Activity Name="ErrorInWorkflow">
+		<Action>NoOperation</Action>
+		<Description>Error occured in workflow execution</Description>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event status to Error/Done</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">ERROR</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+		<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<Activity Name="getOriginalMessage">
+		<Action>Translate</Action>
+		<Description>Translate to get all inbound item ids</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="Derived" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="Map" direction="in" type="string" eval="constant">MDRITME1/maps/MIX/getOriginalMessage_MIX.xsl</Parameter>
+		<Parameter name="OutputFormat" direction="in" type="string" eval="constant">XML</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">TRANSLATE</Parameter>
+		<Parameter name="Translator" direction="in" type="string" eval="constant">XSLT</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">HierarchyLinkDoc</Parameter>
+	</Activity>
+	<Activity Name="GetSizeChangeDoc">
+		<Action>Translate</Action>
+		<Description>Translate to get item master document</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">TRANSLATE</Parameter>
+		<Parameter name="Derived" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="Translator" direction="in" type="string" eval="constant">XSLT</Parameter>
+		<Parameter name="Map" direction="in" type="string" eval="constant">MDRITME1/maps/MIX/is_SizeChange.xsl</Parameter>
+		<Parameter name="OutputFormat" direction="in" type="string" eval="constant">mlXML</Parameter>
+		<Parameter name="Xsl_Param_SizeChange" direction="in" type="string" eval="constant">True</Parameter>
+		<Parameter name="Normalize" direction="in" type="string" eval="constant">None</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="UpdateHierarchyRoleStatus_SYNC">
+		<Action>SaveRecord</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SAVERECORD</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+		<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">inDoc</Parameter>
+		<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+		<Parameter name="GenerateExistenceError" direction="in" type="string" eval="constant">false</Parameter>
+		<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+		<Parameter name="StandardValidation" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="Overwrite" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="RecordPerAsyncCall" direction="in" type="long" eval="constant">10</Parameter>
+		<Parameter name="ATTRIBUTE_ITEM_HIERARCHY_STATUS_CD" direction="in" type="string" eval="constant">VIP_SYNCHRONIZED</Parameter>
+		<Parameter name="ATTRIBUTE_PV_ITEM_ID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/pv_item/@gtin">inDoc</Parameter>
+		<Parameter name="ATTRIBUTE_ROLE_UPDATE_TS" direction="in" type="string" eval="variable">CurrentTimeStamp</Parameter>
+		<Parameter name="RecordsAttempted" direction="out" eval="variable" type="long">attemptedCount</Parameter>
+		<Parameter name="RecordsWithErrors" direction="out" eval="variable" type="long">errorsFound</Parameter>
+	</Activity>
+	<Activity Name="UpdateHierRoleConfirmed_SYNC">
+		<Action>UpdateRecordState</Action>
+		<Description>Set Hierarchy Roles record status as confirmed</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+		<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">inDoc</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+	</Activity>
+	<Activity Name="CheckConfirmed">
+		<Action>EvaluateRuleBase</Action>
+		<Description>Check Item is Confirmed or If should be published</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_CheckConfirmed_MIX.xml</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="Publish_GTIN" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER'][1]/ItemData/Attribute[@name='PRODUCTID']/Value/text()">workDoc</Parameter>
+		<Parameter name="VIPOperation" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()">workDoc</Parameter>
+		<Parameter name="SubmissionReasonCode" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER'][1]/ItemData/Attribute[@name='ITEMSUBMISSIONREASONCODE']/Value/text()">workDoc</Parameter>
+		<Parameter name="PreviousHierarchyRolesStatus" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name='PREVIOUS_HIERARCHY_STATUS']/text()">inDoc</Parameter>
+		<Parameter name="IS_PREVIOUS_CONFIRMED" direction="out" eval="variable" type="arraylist">IS_PREVIOUS_CONFIRMED</Parameter>
+		<Parameter name="HierarchyStatus" direction="out" eval="variable" type="string">HierarchyStatus</Parameter>
+		<Parameter name="PublishToItemAdapter" direction="out" eval="variable" type="arraylist">IsItemAdapterPub</Parameter>
+		<Parameter name="CurrentTimeStamp" direction="out" eval="variable" type="string">CurrentTimeStamp</Parameter>
+		<Parameter name="HasKroEventChange" direction="out" eval="variable" type="arraylist">HasKroEventChange</Parameter>
+	</Activity>
+	<Activity Name="PublishItemsToNotificationQueue">
+		<Action>SendProtocolMessage</Action>
+		<Description>Publish mlxml to BW Notification Queue</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">PUBLISHITEM</Parameter>
+		<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">OUTBOUND_EMAIL_MSG</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="ConversationKey" direction="in" type="string" eval="xpath" source="">ConversationID</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc1</Parameter>
+	</Activity>
+	<Activity Name="CompareItemConfirmVersionBeforePublishToNotifQueue">
+		<Action>CompareRecord</Action>
+		<Description>Compare with previous confirmed version and generate an output document</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="FullCompareFlag" direction="in" type="string" eval="constant">False</Parameter>
+		<Parameter name="CompareMode" direction="in" type="string" eval="constant">BUNDLE</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDocForPublish</Parameter>
+		<Parameter name="CompareKeyword" direction="in" type="string" eval="constant">PREVIOUS_VERSION</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc1</Parameter>
+	</Activity>
+	<Activity Name="No Op Before Check to Confirm">
+		<Action>NoOperation</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="GetItemDataForNotification">
+		<Action>GetRecord</Action>
+		<Description>Get record data</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">GETPRODUCTINFO</Parameter>
+		<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+		<Parameter name="RelationshipDepth" direction="in" type="long" eval="constant">-1</Parameter>
+		<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+		<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+		<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+		<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+		<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+		<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+		<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+		<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+		<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+		<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+		<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+		<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+		<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+		<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+		<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+		<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+		<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+		<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+		<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+		<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+		<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+		<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Contains</Parameter>
+		<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+		<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+		<Parameter name="RelationshipName24" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="long" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDocForPublish</Parameter>
+	</Activity>
+	<Activity Name="SendCICReviewNewItem">
+		<Action>InitiateSubFlow</Action>
+		<Description>Call sub flow for to send review for Item item</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_dm_SendCICReview_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="classStatus" direction="in" type="string" eval="constant">UNDER CONVERSION</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="constant">Item does not exist in MDM, for further clarification please send an email to KrogerProjectMercury@kroger.com</Parameter>
+		<Parameter name="Environment_Name4" direction="in" type="string" eval="variable">Environment_Name3</Parameter>
+		<Parameter name="errorFlag" direction="out" type="string" eval="variable">errorFlag</Parameter>
+		<Parameter name="HierarchyRolesStatus" direction="in" type="string" eval="constant">MDM_REJECT</Parameter>
+		<Parameter name="updateHierarchyRolesBln" direction="in" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<Activity Name="SendCICReviewInvalidDSD">
+		<Action>InitiateSubFlow</Action>
+		<Description>Call sub flow for to send review for Item item</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_dm_SendCICReview_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="classStatus" direction="in" type="string" eval="constant">UNDER CONVERSION</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="constant">Item with DSD providers submitted without valid DSD email addresses, for further clarification please send an email to KrogerProjectMercury@kroger.com</Parameter>
+		<Parameter name="Environment_Name4" direction="in" type="string" eval="variable">Environment_Name3</Parameter>
+		<Parameter name="errorFlag" direction="out" type="string" eval="variable">errorFlag</Parameter>
+		<Parameter name="HierarchyRolesStatus" direction="in" type="string" eval="constant">VIP_REVIEW</Parameter>
+		<Parameter name="updateHierarchyRolesBln" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="constant">UNCONFIRMED</Parameter>
+	</Activity>
+	<Activity Name="checkforDynamicAssortment">
+		<Action>EvaluateRuleBase</Action>
+		<Description>check if Item are Dynamic Assortment Items or not</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_getDynamicAssortmentReviewMessage_MIX.xml</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="FAMILY_TREE_CLASS_CD1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER'][ItemData[Attribute[@name='ISBASEUNIT']/Value/text()='TRUE']][1]/ItemData/Attribute[@name='FAMILY_TREE_CLASS_CD']/Value/text()">workDoc</Parameter>
+		<Parameter name="Publish_GTIN" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">workDoc</Parameter>
+		<Parameter name="PVItemID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/pv_item/@gtin">workDoc</Parameter>
+		<Parameter name="DynamicAssortment_pv_gtin" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER']/ItemData[Attribute[@name='PRODUCTID']/Value/text()=/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/pv_item/@gtin][Attribute[@name='SPECIALITEMCODE']/Value[text()='DYNAMIC_ASSORTMENT']]/Attribute[@name='PRODUCTID']/Value/text()">workDoc</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="operationtype" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/operation/text()">workDoc</Parameter>
+		<Parameter name="reviewmsg" direction="out" eval="variable" type="string">reviewmsg</Parameter>
+	</Activity>
+	<Activity Name="checkforDynamicAssortmentforBaseUnit">
+		<Action>EvaluateRuleBase</Action>
+		<Description>check if Item are Dynamic Assortment Items or not</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+		<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_checkforDynamicAssortmentforBaseUnit.xml</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="DynamicAssortment_pv_gtin" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER']/ItemData[Attribute[@name='PRODUCTID']/Value/text()=/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/pv_item/@gtin][Attribute[@name='SPECIALITEMCODE']/Value[text()='DYNAMIC_ASSORTMENT']]/Attribute[@name='PRODUCTID']/Value/text()">workDoc</Parameter>
+		<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="operationtype" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/operation/text()">workDoc</Parameter>
+		<Parameter name="INITIALCORPORATEAVGLISTCOST1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'CORPORATE_AVERAGE_LIST_COST'][ItemData[Attribute[@name='PRODUCTIDEXT']/Value/text()=/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER'][ItemData[Attribute[@name='ISBASEUNIT']/Value/text()='TRUE']][1]/ItemData/Attribute[@name='PRODUCTID']/Value/text()]][1]/ItemData/Attribute[@name='INITIALCORPORATEAVGLISTCOST']/Value/text()">workDoc</Parameter>
+		<Parameter name="Publish_GTIN" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation[1]/publishedGTIN/text()">workDoc</Parameter>
+		<Parameter name="reviewmsg" direction="out" eval="variable" type="string">reviewmsg</Parameter>
+	</Activity>
+	<Activity Name="SendCICReviewInvalidGTINUnconf">
+		<Action>InitiateSubFlow</Action>
+		<Description>Call sub flow to send review for Invalid GTIN</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_dm_SendCICReview_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="classStatus" direction="in" type="string" eval="constant">UNDER CONVERSION</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_Message']/text()">workDoc</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+		<Parameter name="Environment_Name4" direction="in" type="string" eval="variable">Environment_Name3</Parameter>
+		<Parameter name="HierarchyRolesStatus" direction="in" type="string" eval="constant">VIP_REVIEW</Parameter>
+		<Parameter name="updateHierarchyRolesBln" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+	</Activity>
+	<Activity Name="SendCICReviewInvalidGTINRej">
+		<Action>InitiateSubFlow</Action>
+		<Description>Call sub flow to send review for Invalid GTIN</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_dm_SendCICReview_MIX.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="classStatus" direction="in" type="string" eval="constant">UNDER CONVERSION</Parameter>
+		<Parameter name="message" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_Message']/text()">workDoc</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+		<Parameter name="Environment_Name4" direction="in" type="string" eval="variable">Environment_Name3</Parameter>
+		<Parameter name="HierarchyRolesStatus" direction="in" type="string" eval="constant">MDM_REJECT</Parameter>
+		<Parameter name="updateHierarchyRolesBln" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+	</Activity>
+	<!--CIM Transitions-->
+	<Transition FromActivity="NoOpCreateLinkMvlandHierarchyInfoRecords" ToActivity="getOriginalMessage"/>
+	<Transition FromActivity="GetItemData" ToActivity="ManageRecordCollectionForCheckHierarchyExists"/>
+	<Transition FromActivity="UpdateHierarchyRoleStatus" ToActivity="UpdateHierRoleConfirmed"/>
+	<Transition FromActivity="UpdateHierRoleConfirmed" ToActivity="NoOpCreateLinkMvlandHierarchyInfoRecords"/>
+	<Transition FromActivity="SendHierarchyandLinkInfoToJMS" ToActivity="NoOpBeforeVenusMixFlowStarts"/>
+	<Transition FromActivity="UpdateRecordStateAsConfirmed" ToActivity="SendCICAccept"/>
+	<Transition FromActivity="ManageRecordCollectionForCheckHierarchyExists" ToActivity="CheckCINMessageType1"/>
+	<Transition FromActivity="SendCICAccept" ToActivity="UpdateHierarchyRoleStatus_SYNC"/>
+	<Transition FromActivity="fetchAllEachs" ToActivity="checkContainsExists"/>
+	<Transition FromActivity="checkContainsExists" ToActivity="SendCICReviewStraglerItem"/>
+	<Transition FromActivity="ErrorInWorkflow" ToActivity="SetStatusToError"/>
+	<Transition FromActivity="getOriginalMessage" ToActivity="SendHierarchyandLinkInfoToJMS"/>
+	<Transition FromActivity="GetSizeChangeDoc" ToActivity="PublishToVenusAdapter"/>
+	<Transition FromActivity="UpdateHierarchyRoleStatus_SYNC" ToActivity="UpdateHierRoleConfirmed_SYNC"/>
+	<Transition FromActivity="UpdateHierRoleConfirmed_SYNC" ToActivity="NoOpModifyflow"/>
+	<Transition FromActivity="PublishItemsToNotificationQueue" ToActivity="CheckConfirmed"/>
+	<Transition FromActivity="CompareItemConfirmVersionBeforePublishToNotifQueue" ToActivity="PublishItemsToNotificationQueue"/>
+	<Transition FromActivity="GetItemDataForNotification" ToActivity="CompareItemConfirmVersionBeforePublishToNotifQueue"/>
+	<Transition FromActivity="NoOpBeforeVenusMixFlowStarts" ToActivity="SendCICReviewInvalidDSD">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name='hasValidDSDEmails']/text()" name="ValidDSDEmailAddresses" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name='isDSD']/text()" name="isDSDItem" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamTrue" type="string" >TRUE</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamFalse" type="string" >FALSE</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( isDSDItem!=null && isDSDItem.equalsIgnoreCase(inputParamTrue) && ValidDSDEmailAddresses!=null && ValidDSDEmailAddresses.equalsIgnoreCase(inputParamFalse)); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="NoOpBeforeVenusMixFlowStarts" ToActivity="GetItemDataForNotification"/>
+	<Transition FromActivity="checkPVItemExists" ToActivity="NoOpCreateLinkMvlandHierarchyInfoRecords">
+		<Description>if PV item not exists and operation is NEW then create link and Hierarchy Information</Description>
+		<Rule>
+			<Parameter name="SPECIALITEMCODE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER'][ItemData/Attribute[@name='SPECIALITEMCODE']/Value[text()='DYNAMIC_ASSORTMENT']][1]/ItemData/Attribute[@name='SPECIALITEMCODE']/Value/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParam" type="string" >DYNAMIC_ASSORTMENT</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="variable" name="ISPVItemExist" type="boolean" >ISPVItemExist</Parameter>
+			<Parameter direction="in" eval="constant" name="NewOperation" type="string" >NEW</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamBoolean" type="boolean" >FALSE</Parameter>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (operation.equalsIgnoreCase(NewOperation)) && (inputParamBoolean == ISPVItemExist) && ( SPECIALITEMCODE==null || !(SPECIALITEMCODE.equalsIgnoreCase(inputParam))) && (( REVIEWSTATE==null )|| (REVIEWSTATE.equalsIgnoreCase(inputParamString1))) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkPVItemExists" ToActivity="fetchAllEachs">
+		<Description>If PV item exists and operation is NEW, then check contains in PID</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="variable" name="ISPVItemExist" type="boolean" >ISPVItemExist</Parameter>
+			<Parameter direction="in" eval="constant" name="NewOperation" type="string" >NEW</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamBoolean" type="boolean" >TRUE</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (operation.equalsIgnoreCase(NewOperation)) && (inputParamBoolean == ISPVItemExist) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkPVItemExists" ToActivity="SendCICReviewStraglerItem">
+		<Description>if PV item not exists and operation is INITIALLOAD then send review message for resubmitting as NEW ITEM.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="variable" name="ISPVItemExist" type="boolean" >ISPVItemExist</Parameter>
+			<Parameter direction="in" eval="constant" name="InitialLoadOperation" type="string" >INITIALLOAD</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamBoolean" type="boolean" >FALSE</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (operation.equalsIgnoreCase(InitialLoadOperation)) && (inputParamBoolean == ISPVItemExist) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkPVItemExists" ToActivity="checkforDynamicAssortment">
+		<Description>if PV item exists and operation is INITIALLOAD and item are dynamic assort items then check it's match all dynamic assort cases</Description>
+		<Rule>
+			<Parameter name="SPECIALITEMCODE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER'][ItemData/Attribute[@name='SPECIALITEMCODE']/Value[text()='DYNAMIC_ASSORTMENT']][1]/ItemData/Attribute[@name='SPECIALITEMCODE']/Value/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParam" type="string" >DYNAMIC_ASSORTMENT</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="InitialLoadOperation" type="string" >INITIALLOAD</Parameter>
+			<Parameter direction="in" eval="constant" name="NewOperation" type="string" >NEW</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamBoolean" type="boolean" >TRUE</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamBooleanfalse" type="boolean" >FALSE</Parameter>
+			<Parameter direction="in" eval="variable" name="ISPVItemExist" type="boolean" >ISPVItemExist</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( ((operation.equalsIgnoreCase(InitialLoadOperation)) && (inputParamBoolean == ISPVItemExist) ) || ((operation.equalsIgnoreCase(NewOperation)) && (inputParamBooleanfalse == ISPVItemExist) ) ) && ( SPECIALITEMCODE!=null && SPECIALITEMCODE.equalsIgnoreCase(inputParam)) ) ; ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkPVItemExists" ToActivity="SendCICReviewInvalidGTINUnconf">
+		<Description>Go to SendCICReviewInvalidGTIN when Review_State is defined other than NA and state is unconfirmed</Description>
+		<Rule>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >UNCONFIRMED</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( REVIEWSTATE!=null ) && !(REVIEWSTATE.equalsIgnoreCase(inputParamString1)) && (ItemMasterRecordState.equalsIgnoreCase(inputParamString2)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkPVItemExists" ToActivity="SendCICReviewInvalidGTINRej">
+		<Description>Go to SendCICReviewInvalidGTIN when Review_State is defined other than NA</Description>
+		<Rule>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >REJECTED</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( REVIEWSTATE!=null ) && !(REVIEWSTATE.equalsIgnoreCase(inputParamString1)) && (ItemMasterRecordState.equalsIgnoreCase(inputParamString2)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkPVItemExists" ToActivity="UpdateHierarchyRoleStatus">
+		<Description>if PV item exists and operation is INITIALLOAD then update Hierarchy role as 'INPROCESS_STRAGGLER' and create link and Hierarchy Information.</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="InitialLoadOperation" type="string" >INITIALLOAD</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamBoolean" type="boolean" >TRUE</Parameter>
+			<Parameter direction="in" eval="variable" name="ISPVItemExist" type="boolean" >ISPVItemExist</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (operation.equalsIgnoreCase(InitialLoadOperation)) && (inputParamBoolean == ISPVItemExist) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="SendCICReviewStraglerItem" ToActivity="ErrorInWorkflow">
+		<Description>Check whether event status is error</Description>
+		<Rule>
+			<Parameter direction="in" eval="variable" name="errorFlag" type="boolean" >errorFlag</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = (errorFlag!= null && errorFlag); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckConfirmed" ToActivity="CheckSizeChangeOrReasonCode">
+		<Description>Go to CheckCaseDescription when operation MODIFY</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="modifyString" type="string" >MODIFY</Parameter>
+			<Parameter direction="in" eval="constant" name="correctionString" type="string" >CORRECTION</Parameter>
+			<Parameter direction="in" eval="constant" name="initialLoadString" type="string" >INITIALLOAD</Parameter>
+			<Parameter direction="in" eval="variable" name="PREVIOUS_CONFIRMED" type="arraylist" >IS_PREVIOUS_CONFIRMED</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamStringBool" type="string" >true</Parameter>
+			<Parameter direction="in" eval="constant" name="ValidHRStatus" type="string" >ENRICHMENT_COMPLETE</Parameter>
+			<Parameter direction="in" eval="variable" name="HR_STATUS" type="string" >HierarchyStatus</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ((operation.equalsIgnoreCase(modifyString) || operation.equalsIgnoreCase(correctionString) || operation.equalsIgnoreCase(initialLoadString)) && (PREVIOUS_CONFIRMED !=null) && (PREVIOUS_CONFIRMED.contains(inputParamStringBool)) && (HR_STATUS.contains(ValidHRStatus))); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckConfirmed" ToActivity="PublishToVenusAdapter">
+		<Rule>
+			<Parameter direction="in" eval="variable" name="PubToAdapter" type="arraylist" >IsItemAdapterPub</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString" type="string" >true</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (PubToAdapter !=null) && (PubToAdapter.contains(inputParamString)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckConfirmed" ToActivity="No Op Before Check to Confirm"/>
+	<Transition FromActivity="CheckSizeChangeOrReasonCode" ToActivity="GetSizeChangeDoc">
+		<Description>Go to PublishToVenusAdapterQueue when CaseDescription is modified</Description>
+		<Rule>
+			<Parameter direction="in" eval="variable" name="CHANGED_SizeChange" type="arraylist" >has_SizeChange</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString" type="string" >true</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (CHANGED_SizeChange !=null) && (CHANGED_SizeChange.contains(inputParamString)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckSizeChangeOrReasonCode" ToActivity="PublishToVenusAdapter">
+		<Rule>
+			<Parameter direction="in" eval="variable" name="PubToAdapter" type="arraylist" >IsItemAdapterPub</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString" type="string" >true</Parameter>
+			<Parameter direction="in" eval="variable" name="SubmissionReasonCode" type="arraylist" >HasSubmissionReasonCode</Parameter>
+			<Parameter direction="in" eval="variable" name="KroEventCode" type="arraylist" >HasKroEventChange</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ((PubToAdapter !=null) && (PubToAdapter.contains(inputParamString))) || ((SubmissionReasonCode !=null) && (SubmissionReasonCode.contains(inputParamString))) || ((KroEventCode !=null) && (KroEventCode.contains(inputParamString)))); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckSizeChangeOrReasonCode" ToActivity="No Op Before Check to Confirm"/>
+	<Transition FromActivity="No Op Before Check to Confirm" ToActivity="UpdateRecordStateAsConfirmed">
+		<Rule>
+			<Parameter direction="in" eval="variable" name="PREVIOUS_CONFIRMED" type="arraylist" >IS_PREVIOUS_CONFIRMED</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString" type="string" >true</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (PREVIOUS_CONFIRMED !=null) && (PREVIOUS_CONFIRMED.contains(inputParamString)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="No Op Before Check to Confirm" ToActivity="NoOpModifyflow"/>
+	<Transition FromActivity="checkforDynamicAssortment" ToActivity="SendCICReviewStraglerItem">
+		<Rule>
+			<Parameter direction="in" eval="variable" name="reviewmsg1" type="string" >reviewmsg</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( reviewmsg1!=null); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkforDynamicAssortment" ToActivity="checkforDynamicAssortmentforBaseUnit"/>
+	<Transition FromActivity="checkforDynamicAssortmentforBaseUnit" ToActivity="SendCICReviewStraglerItem">
+		<Rule>
+			<Parameter direction="in" eval="variable" name="reviewmsg1" type="string" >reviewmsg</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( reviewmsg1!=null); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkforDynamicAssortmentforBaseUnit" ToActivity="SendCICReviewInvalidGTINUnconf">
+		<Description>Go to SendCICReviewInvalidGTIN when Review_State is defined other than NA and state is unconfirmed</Description>
+		<Rule>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >UNCONFIRMED</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( REVIEWSTATE!=null ) && !(REVIEWSTATE.equalsIgnoreCase(inputParamString1)) && (ItemMasterRecordState.equalsIgnoreCase(inputParamString2)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkforDynamicAssortmentforBaseUnit" ToActivity="SendCICReviewInvalidGTINRej">
+		<Description>Go to SendCICReviewInvalidGTIN when Review_State is defined other than NA</Description>
+		<Rule>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >REJECTED</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( REVIEWSTATE!=null ) && !(REVIEWSTATE.equalsIgnoreCase(inputParamString1)) && (ItemMasterRecordState.equalsIgnoreCase(inputParamString2)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkforDynamicAssortmentforBaseUnit" ToActivity="UpdateHierarchyRoleStatus">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="InitialLoadOperation" type="string" >INITIALLOAD</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamBoolean" type="boolean" >TRUE</Parameter>
+			<Parameter direction="in" eval="variable" name="ISPVItemExist" type="boolean" >ISPVItemExist</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (operation.equalsIgnoreCase(InitialLoadOperation)) && (inputParamBoolean == ISPVItemExist) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="checkforDynamicAssortmentforBaseUnit" ToActivity="NoOpCreateLinkMvlandHierarchyInfoRecords"/>
+	<Transition FromActivity="CheckCINMessageType1" ToActivity="checkforDynamicAssortment">
+		<Description>Go to getDynamicAssortmentReviewMessage when operation MODIFY,CORRECTION and Item Exists in MDM and it is dynamic assortment item</Description>
+		<Rule>
+			<Parameter name="SPECIALITEMCODE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[MasterCatalog/RevisionID/BaseName= 'ITEM_MASTER'][ItemData/Attribute[@name='SPECIALITEMCODE']/Value[text()='DYNAMIC_ASSORTMENT']][1]/ItemData/Attribute[@name='SPECIALITEMCODE']/Value/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParam" type="string" >DYNAMIC_ASSORTMENT</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name='ITEM_EXISTS_MDM']/text()" name="ItemExistsinMDM" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamTrue" type="string" >TRUE</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >CORRECTION</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >MODIFY</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( (operation.equalsIgnoreCase(inputParamString1)) || (operation.equalsIgnoreCase(inputParamString2))) && ItemExistsinMDM!=null && ItemExistsinMDM.equalsIgnoreCase(inputParamTrue) && ( SPECIALITEMCODE!=null && SPECIALITEMCODE.equalsIgnoreCase(inputParam)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckCINMessageType1" ToActivity="checkPVItemExists">
+		<Description>Go to CheckPVItemExist when operation type is INITIALLOAD OR NEW</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name='ITEM_EXISTS_MDM']/text()" name="ItemExistsinMDM" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamFalse" type="string" >FALSE</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >INITIALLOAD</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >NEW</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (operation.equalsIgnoreCase(inputParamString1)) || (operation.equalsIgnoreCase(inputParamString2))) && ((ItemExistsinMDM ==null) ||(ItemExistsinMDM!=null && ItemExistsinMDM.equalsIgnoreCase(inputParamFalse))) ; ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckCINMessageType1" ToActivity="NoOpCreateLinkMvlandHierarchyInfoRecords">
+		<Description>Go to NoOpCreateLinkMvlandHierarchyInfoRecords when operation MODIFY,CORRECTION</Description>
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name='ITEM_EXISTS_MDM']/text()" name="ItemExistsinMDM" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamTrue" type="string" >TRUE</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString4" type="string" >CORRECTION</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString5" type="string" >MODIFY</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString3" type="string" >INITIALLOAD</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >NEW</Parameter>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = (( (operation.equalsIgnoreCase(inputParamString4)) || (operation.equalsIgnoreCase(inputParamString5)) || (operation.equalsIgnoreCase(inputParamString3)) || (operation.equalsIgnoreCase(inputParamString2))) && ItemExistsinMDM!=null && ItemExistsinMDM.equalsIgnoreCase(inputParamTrue) && (( REVIEWSTATE==null )|| (REVIEWSTATE.equalsIgnoreCase(inputParamString1))) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckCINMessageType1" ToActivity="SendCICReviewNewItem">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" name="operation" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@name='ITEM_EXISTS_MDM']/text()" name="ItemExistsinMDM" type="string" >workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamFalse" type="string" >FALSE</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >CORRECTION</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >MODIFY</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (operation.equalsIgnoreCase(inputParamString1)) || (operation.equalsIgnoreCase(inputParamString2))) && ItemExistsinMDM!=null && ItemExistsinMDM.equalsIgnoreCase(inputParamFalse); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckCINMessageType1" ToActivity="SendCICReviewInvalidGTINUnconf">
+		<Description>Go to SendCICReviewInvalidGTIN when Review_State is defined other than NA and state is unconfirmed</Description>
+		<Rule>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >UNCONFIRMED</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( REVIEWSTATE!=null ) && !(REVIEWSTATE.equalsIgnoreCase(inputParamString1)) && (ItemMasterRecordState.equalsIgnoreCase(inputParamString2)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckCINMessageType1" ToActivity="SendCICReviewInvalidGTINRej">
+		<Description>Go to SendCICReviewInvalidGTIN when Review_State is defined other than NA</Description>
+		<Rule>
+			<Parameter name="REVIEWSTATE" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter name="ItemMasterRecordState" direction="in" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/os:kgr_derived/hierarchy/VIPPublishedGTIN/os:derived_attr[@as_ref='Review_State']/text()">workDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString1" type="string" >NA</Parameter>
+			<Parameter direction="in" eval="constant" name="inputParamString2" type="string" >REJECTED</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( ( REVIEWSTATE!=null ) && !(REVIEWSTATE.equalsIgnoreCase(inputParamString1)) && (ItemMasterRecordState.equalsIgnoreCase(inputParamString2)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+</Workflow>

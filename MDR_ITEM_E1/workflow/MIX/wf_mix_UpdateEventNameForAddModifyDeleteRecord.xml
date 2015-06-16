@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1.3">
+	<Owner>TIBCO</Owner>
+	<Name>wf_mix_UpdateEventNameForAddModifyDeleteRecord</Name>
+	<Description>wf_mix_UpdateEventNameForAddModifyDeleteRecord</Description>
+	<Parameter name="inDoc" direction="in" type="document" eval="variable">1</Parameter>
+	<Parameter name="outDoc1" direction="out" type="document" eval="variable"/>
+	<!--CIM Activities-->
+	<Activity Name="GetItemData">
+		<Action>GetRecord</Action>
+		<Description>Get record data</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+		<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+		<Parameter name="MasterCatalog" direction="in" type="long" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+	</Activity>
+	<Activity Name="ManageRecordCollection">
+		<Action>ManageRecordCollection</Action>
+		<Description>Construct record list</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">IDENTIFYVERSION</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+		<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+		<Parameter name="BundlingOption" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="RelationshipName" direction="in" type="string" eval="constant">DUMMY</Parameter>
+		<Parameter name="OutRecordList" direction="out" eval="variable" type="recordlist">workRecordListNew</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToSuccess">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Success/Done</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">SUCCESS</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsConfirmed">
+		<Action>UpdateRecordState</Action>
+		<Description>Records reviewed, change state to confirmed</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+		<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="StepID" direction="out" eval="variable" type="long">update_step</Parameter>
+		<Parameter name="CommandStatus" direction="out" eval="variable" type="string">commandStatus</Parameter>
+	</Activity>
+	<Activity Name="LinkAdd">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Link Add</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX Link Add</Parameter>
+	</Activity>
+	<Activity Name="NoOperation">
+		<Start/>
+		<Action>NoOperation</Action>
+		<Description/>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Activity Name="LinkModify">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Link Modify</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX Link Modify</Parameter>
+	</Activity>
+	<Activity Name="LinkDelete">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Link Delete</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX Link Delete</Parameter>
+	</Activity>
+	<Activity Name="HierarchyInformationAdd">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Hierarchy Information Add</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX HierarchyInfo Add</Parameter>
+	</Activity>
+	<Activity Name="UpdateRecordStateAsUnConfirmed">
+		<Action>UpdateRecordState</Action>
+		<Description>Records reviewed, change state to confirmed</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+		<Parameter name="Status" direction="in" type="string" eval="constant">UNCONFIRMED</Parameter>
+		<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter name="StepID" direction="out" eval="variable" type="long">update_step</Parameter>
+		<Parameter name="CommandStatus" direction="out" eval="variable" type="string">commandStatus</Parameter>
+	</Activity>
+	<Activity Name="HierarchyInformationModify">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Hierarchy Information Modify</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX HierarchyInfo Modify</Parameter>
+	</Activity>
+	<Activity Name="HierarchyInformationDelete">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event state to Hierarchy Information Delete</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX HierarchyInfo Delete</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description>Set the event status to Error/Done</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventStatus" direction="in" type="string" eval="constant">ERROR</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+		<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<!--CIM Transitions-->
+	<Transition FromActivity="GetItemData" ToActivity="ManageRecordCollection"/>
+	<Transition FromActivity="UpdateRecordStateAsConfirmed" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="LinkAdd" ToActivity="GetItemData"/>
+	<Transition FromActivity="LinkModify" ToActivity="GetItemData"/>
+	<Transition FromActivity="LinkDelete" ToActivity="GetItemData"/>
+	<Transition FromActivity="HierarchyInformationAdd" ToActivity="GetItemData"/>
+	<Transition FromActivity="UpdateRecordStateAsUnConfirmed" ToActivity="SetStatusToSuccess"/>
+	<Transition FromActivity="HierarchyInformationModify" ToActivity="GetItemData"/>
+	<Transition FromActivity="HierarchyInformationDelete" ToActivity="GetItemData"/>
+	<Transition FromActivity="NoOperation" ToActivity="LinkAdd">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="LINK" type="string" >LINK_MVL</Parameter>
+			<Parameter direction="in" eval="constant" name="CatEditAdd" type="string" >CatEditAdd</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = (catalogName.equalsIgnoreCase(LINK) && subtype.equalsIgnoreCase(CatEditAdd)); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="NoOperation" ToActivity="LinkModify">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="LINK" type="string" >LINK_MVL</Parameter>
+			<Parameter direction="in" eval="constant" name="CatEditChange" type="string" >CatEditChange</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (catalogName.equalsIgnoreCase(LINK)) && (subtype.equalsIgnoreCase(CatEditChange)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="NoOperation" ToActivity="LinkDelete">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="LINK" type="string" >LINK_MVL</Parameter>
+			<Parameter direction="in" eval="constant" name="CatEditDelete" type="string" >CatEditDelete</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (catalogName.equalsIgnoreCase(LINK)) && (subtype.equalsIgnoreCase(CatEditDelete)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="NoOperation" ToActivity="HierarchyInformationAdd">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="HIERARCHYINFORMATION" type="string" >HIERARCHYINFORMATION</Parameter>
+			<Parameter direction="in" eval="constant" name="CatEditAdd" type="string" >CatEditAdd</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = (catalogName.equalsIgnoreCase(HIERARCHYINFORMATION) && subtype.equalsIgnoreCase(CatEditAdd)); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="NoOperation" ToActivity="HierarchyInformationModify">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="HIERARCHYINFORMATION" type="string" >HIERARCHYINFORMATION</Parameter>
+			<Parameter direction="in" eval="constant" name="CatEditChange" type="string" >CatEditChange</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (catalogName.equalsIgnoreCase(HIERARCHYINFORMATION)) && (subtype.equalsIgnoreCase(CatEditChange)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="NoOperation" ToActivity="HierarchyInformationDelete">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="HIERARCHYINFORMATION" type="string" >HIERARCHYINFORMATION</Parameter>
+			<Parameter direction="in" eval="constant" name="CatEditDelete" type="string" >CatEditDelete</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (catalogName.equalsIgnoreCase(HIERARCHYINFORMATION)) && (subtype.equalsIgnoreCase(CatEditDelete)) ); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="NoOperation" ToActivity="GetItemData"/>
+	<Transition FromActivity="ManageRecordCollection" ToActivity="UpdateRecordStateAsConfirmed">
+		<Rule>
+			<Parameter direction="in" eval="xpath" source="//CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" name="catalogName" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="xpath" source="//Body/Document/@subtype" name="subtype" type="string" >inDoc</Parameter>
+			<Parameter direction="in" eval="constant" name="HIERARCHYINFORMATION" type="string" >HIERARCHYINFORMATION</Parameter>
+			<Parameter direction="in" eval="constant" name="LINK" type="string" >LINK_MVL</Parameter>
+			<Parameter direction="out" name="result" type="boolean" />
+			<Condition format="bsh" >
+				<![CDATA[ result = ( (catalogName.equalsIgnoreCase(HIERARCHYINFORMATION) || catalogName.equalsIgnoreCase(LINK))); ]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ManageRecordCollection" ToActivity="UpdateRecordStateAsUnConfirmed"/>
+	<Transition type="error" FromActivity="Any" ToActivity="SetStatusToError"/>
+</Workflow>

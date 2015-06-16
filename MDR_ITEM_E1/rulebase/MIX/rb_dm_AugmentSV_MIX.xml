@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This rulebase will be called if the an item is identified as SPACK.
+This rulebase perform following operations:
+1. It will fetch all the child records for the matched logistic variant.
+2. Call a rulebase custom function which will match the child SV's in the PID provided datasources.
+3. Set the Sales_variant_flg as 'Y' for all the matched GTIN's
+
+-->
+
+<rulebase metaversion="0.1">
+	<name>AugmentSV</name>			
+	<description>Augment Sales Variant</description>
+
+	<declare usage="input">
+		<var>matchedLVGtin</var>
+		<datatype type="string"/>
+	</declare>
+
+	<declare usage="input">
+		<var>ruleRouterHrchy</var>
+		<datatype type="string"/>
+	</declare>
+
+
+
+	<declare usage="input">
+		<var>matchedSVGTINArray</var>
+		<datatype type="array"/>
+	</declare>	
+	<declare usage="output">
+		<var>IS_HIERARCHY_CORRECT</var>
+		<datatype type="array"/>
+	</declare>	
+
+
+
+	<constraint>
+		<!-- If a record is matched as PID SV's then set the Sales_variant_flg as true.
+		 count the number of matching SV GTIN's. If it is = 0 than send CIC reject message.
+		The below constrain is for SHPER and SPACK..
+	 -->
+		<name>SetSVFlagForMatchedItem</name>
+		<description>Set sales variant flag for all matched GTIN's</description>
+		<condition>
+			<and>
+
+				<or>
+					<eq>
+						<var>ruleRouterHrchy</var>
+						<const type="string">SPACK</const>
+					</eq>	
+					<eq>
+						<var>ruleRouterHrchy</var>
+						<const type="string">SHPER</const>
+					</eq>
+					<eq>
+						<var>ruleRouterHrchy</var>
+						<const type="string">IPACK</const>
+					</eq>
+					<eq>
+						<var>ruleRouterHrchy</var>
+						<const type="string">CIPCK</const>
+					</eq>						
+				</or>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<in>
+					<var>PRODUCTID</var>
+					<var>matchedSVGTINArray</var>
+				</in>
+			</and>
+		</condition>  
+		<action>
+			<assign>
+				<var>SALES_VARIANT_FLG</var>
+				<const type="boolean">TRUE</const>
+			</assign>
+
+
+			<assign>
+				<var>IS_HIERARCHY_CORRECT</var>
+				<const type="string">True</const>
+			</assign>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<!-- The below constrain is for NPACK..
+	 -->
+		<name>SetSVFlagForNpackCIPCKItem</name>
+		<description>Set sales variant flag for NPACK and CIPCK items</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<or>
+					<eq>
+						<var>ruleRouterHrchy</var>
+						<const type="string">NPACK</const>
+					</eq>
+					<eq>
+						<var>ruleRouterHrchy</var>
+						<const type="string">CIPCK</const>
+					</eq>
+				</or>
+				<eq>
+					<var>PRODUCTID</var>
+					<var>matchedLVGtin</var>
+				</eq>
+			</and>
+		</condition>  
+		<action>
+			<assign>
+				<var>SALES_VARIANT_FLG</var>
+				<const type="boolean">TRUE</const>
+			</assign>
+
+
+			<assign>
+				<var>IS_HIERARCHY_CORRECT</var>
+				<const type="string">True</const>
+			</assign>
+		</action>
+	</constraint>
+
+	<constraint>
+		<!-- The below constrain is for NPACK..
+	 -->
+		<name>SetSVFlagForNpackItem1</name>
+		<description>Set sales variant flag for NPACK items 1</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<eq>
+					<var>ruleRouterHrchy</var>
+					<const type="string">NPACK</const>
+				</eq>
+			</and>
+		</condition>  
+		<action>
+			<assign>
+				<var>IS_HIERARCHY_CORRECT</var>
+				<const type="string">True</const>
+			</assign>
+		</action>
+	</constraint>
+
+
+
+
+</rulebase>

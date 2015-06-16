@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+	<name>GetEnviornmentName</name>
+	<description>GetEnviornmentName</description>
+	<declare usage="output">
+		<var>EnvironmentName</var>
+		<datatype type="string"/>
+	</declare>
+	<constraint>
+		<name>EnvironmentName</name>
+		<description>Environment Name</description>
+		<action>
+			<assign>
+				<var>EnvironmentName</var>					
+					<op func="getEnviromentName">
+						<const type="string">ENVIORNMENT_NAME</const>						
+					</op>			
+			</assign>			
+		</action>
+	</constraint>
+</rulebase>

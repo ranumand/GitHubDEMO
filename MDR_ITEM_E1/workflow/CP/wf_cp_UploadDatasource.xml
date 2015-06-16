@@ -1,0 +1,367 @@
+<?xml version="1.0"?>
+<Workflow Version="1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="Workflow.xsd">
+	<Owner>TIBCO</Owner>
+	<Name>wf_cp_UploadDatasource</Name>
+	<Description>Workflow to handle data from DM and load into New MDM</Description>
+	<Parameter direction="in" name="inDoc" type="document" eval="variable">1</Parameter>
+	<Parameter direction="out" name="outDoc" type="document" eval="variable"/>
+	<Parameter direction="out" name="errorFlag" type="boolean" eval="variable">errorFlag</Parameter>
+	<Parameter direction="out" name="isRejected" type="boolean" eval="variable">isRejected</Parameter>
+	<Activity Name="UploadDataSource_DM_ItemMaster">
+		<Start/>
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[1]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_ItemContent">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[2]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[2]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[2]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_ItemDescription_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[3]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[3]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[3]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_AUTHORIZED_REGION_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[4]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[4]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[4]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_CATALOGUEPRICE_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[5]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[5]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[5]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_ITEM_IMAGE">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[6]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[6]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[6]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_MANUFACTURER_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[7]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[7]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[7]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_MEASURES_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[8]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[8]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[8]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_PROMO_TRADE_ITEM_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[9]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[9]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[9]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_RETAILPRICEONTRADEITEM_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[10]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[10]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[10]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_TEMPERATURE_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[11]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[11]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[11]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_WEIGHT_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[12]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[12]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[12]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+		<Activity Name="UploadDataSource_DM_CORP_AVG_LIST_COST">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[13]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[13]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[13]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>	
+	<Activity Name="UploadDataSource_DM_FOOD_AND_BEV_ALLERGEN_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[14]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[14]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[14]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>	
+	<Activity Name="UploadDataSource_DM_FOOD_AND_BEV_NUTRIFACTS_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[15]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[15]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[15]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>	
+	<Activity Name="UploadDataSource_DM_FOOD_AND_BEV_PREP_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[16]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[16]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[16]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>	
+	<Activity Name="UploadDataSource_DM_GPC_BRICK_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[17]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[17]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[17]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>	
+	<Activity Name="UploadDataSource_DM_ORDERSIZINGFACTOR_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[18]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[18]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[18]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>	
+	<Activity Name="UploadDataSource_DM_PEG_MEASUREMENT_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[19]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[19]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[19]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_ITEM_MASTER_CS">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[20]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[20]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[20]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_ORGANIC_CLAIM">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[21]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[21]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[21]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_FOOD_BEV_INGREDIENT_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[22]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[22]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[22]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_FOOD_AND_BEV_DIET_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[23]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[23]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[23]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_FLASHPOINTTEMPERATURE_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[24]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[24]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[24]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_HANDLING_INSTRUCTION_CODE_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[25]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[25]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[25]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_FUNCTIONAL_NAME_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[26]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[26]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[26]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSource_DM_GTIN_NAME_MVL">
+		<Action>UploadDataSource</Action>
+		<Description lang="en">Upload data source summary</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">UPLOAD</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSource" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[27]/RevisionID/BaseName/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceURI" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[27]/URIInfo/URI/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="DataSourceFileName" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/DataSource[27]/URIInfo/FileName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MaxNumberOfErrors" type="long" eval="constant">50</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsAttempted">totalRowsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="TotalRecordsWithErrors">totalRowsWithErrors</Parameter>
+	</Activity>
+	<Activity Name="UploadDataSourceComplete">
+		<Action>NoOperation</Action>
+		<Description>The (successful) end point of the process</Description>
+		<Execution>SYNCHR</Execution>
+	</Activity>
+	<Transition FromActivity="UploadDataSource_DM_ItemMaster" ToActivity="UploadDataSource_DM_ItemContent"/>
+	<Transition FromActivity="UploadDataSource_DM_ItemContent" ToActivity="UploadDataSource_DM_ItemDescription_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_ItemDescription_MVL" ToActivity="UploadDataSource_DM_AUTHORIZED_REGION_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_AUTHORIZED_REGION_MVL" ToActivity="UploadDataSource_DM_CATALOGUEPRICE_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_CATALOGUEPRICE_MVL" ToActivity="UploadDataSource_DM_ITEM_IMAGE"/>
+	<Transition FromActivity="UploadDataSource_DM_ITEM_IMAGE" ToActivity="UploadDataSource_DM_MANUFACTURER_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_MANUFACTURER_MVL" ToActivity="UploadDataSource_DM_MEASURES_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_MEASURES_MVL" ToActivity="UploadDataSource_DM_PROMO_TRADE_ITEM_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_PROMO_TRADE_ITEM_MVL" ToActivity="UploadDataSource_DM_RETAILPRICEONTRADEITEM_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_RETAILPRICEONTRADEITEM_MVL" ToActivity="UploadDataSource_DM_TEMPERATURE_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_TEMPERATURE_MVL" ToActivity="UploadDataSource_DM_WEIGHT_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_WEIGHT_MVL" ToActivity="UploadDataSource_DM_CORP_AVG_LIST_COST"/>
+	<Transition FromActivity="UploadDataSource_DM_CORP_AVG_LIST_COST" ToActivity="UploadDataSource_DM_FOOD_AND_BEV_ALLERGEN_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_FOOD_AND_BEV_ALLERGEN_MVL" ToActivity="UploadDataSource_DM_FOOD_AND_BEV_NUTRIFACTS_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_FOOD_AND_BEV_NUTRIFACTS_MVL" ToActivity="UploadDataSource_DM_FOOD_AND_BEV_PREP_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_FOOD_AND_BEV_PREP_MVL" ToActivity="UploadDataSource_DM_GPC_BRICK_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_GPC_BRICK_MVL" ToActivity="UploadDataSource_DM_ORDERSIZINGFACTOR_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_ORDERSIZINGFACTOR_MVL" ToActivity="UploadDataSource_DM_PEG_MEASUREMENT_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_PEG_MEASUREMENT_MVL" ToActivity="UploadDataSource_DM_ITEM_MASTER_CS"/>
+	<Transition FromActivity="UploadDataSource_DM_ITEM_MASTER_CS" ToActivity="UploadDataSource_DM_ORGANIC_CLAIM"/>
+	<Transition FromActivity="UploadDataSource_DM_ORGANIC_CLAIM" ToActivity="UploadDataSource_DM_FOOD_BEV_INGREDIENT_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_FOOD_BEV_INGREDIENT_MVL" ToActivity="UploadDataSource_DM_FOOD_AND_BEV_DIET_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_FOOD_AND_BEV_DIET_MVL" ToActivity="UploadDataSource_DM_FLASHPOINTTEMPERATURE_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_FLASHPOINTTEMPERATURE_MVL" ToActivity="UploadDataSource_DM_HANDLING_INSTRUCTION_CODE_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_HANDLING_INSTRUCTION_CODE_MVL" ToActivity="UploadDataSource_DM_FUNCTIONAL_NAME_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_FUNCTIONAL_NAME_MVL" ToActivity="UploadDataSource_DM_GTIN_NAME_MVL"/>
+	<Transition FromActivity="UploadDataSource_DM_GTIN_NAME_MVL" ToActivity="UploadDataSourceComplete"/>
+</Workflow>

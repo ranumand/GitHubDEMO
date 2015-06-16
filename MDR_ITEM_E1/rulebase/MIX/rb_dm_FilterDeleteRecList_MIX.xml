@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will gets the highest hierarhcy Designation
+-->
+
+	<name>fetchHighestHierarchyDesignation</name>
+	<description>Get highest hierarhcy Designation</description>
+
+
+	<declare usage="input">
+		<var>inboundRecordList</var>
+		<datatype type="array"/>
+	</declare>
+
+	<declare usage="output">
+		<var>deltedRecList</var>
+		<datatype type="array"/>
+	</declare>
+
+	<declare>
+		<var>CONTAINS_RECORDS</var>
+		<link type="relationship_record">
+			<literal>Contains</literal>
+		</link>
+	</declare>
+
+	<declare>
+		<var>CONTAINED_BY_RECORDS</var>
+		<link type="relationship_record">
+			<literal>ContainedBy</literal>
+		</link>
+	</declare>
+	<declare>
+		<var>MULTI_CONTAINED_BY_RECORDS</var>
+		<link type="multi_relationship_record">
+			<literal>ContainedBy</literal>
+			<literal>ContainedBy</literal>
+		</link>
+	</declare>
+	<declare>
+		<var>fwEligibleForDelete</var>
+		<datatype type="boolean"/>
+	</declare>
+
+	<declare>
+		<var>reEligibleForDelete</var>
+		<datatype type="boolean"/>
+	</declare>
+
+	<constraint>
+		<name>getDeleteRecList</name>
+		<description>Check if GTIN exist in PID as LV</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>PRODUCTID</var>
+				</defined>				
+				<or>
+					<and>
+						<defined>
+							<var>CONTAINED_BY_RECORDS</var>
+						</defined>
+						<or>
+							<undefined>
+								<var>PUBLISHED_GTIN_FLG</var>
+							</undefined>
+							<and>
+								<defined>
+									<var>PUBLISHED_GTIN_FLG</var>
+								</defined>
+								<eq>
+									<var>PUBLISHED_GTIN_FLG</var>
+									<const type="boolean">false</const>
+								</eq>
+							</and>
+						</or>
+						<or>
+							<undefined>
+								<var>CONTAINED_BY_RECORDS/PUBLISHED_GTIN_FLG</var>
+							</undefined>
+							<and>
+								<undefined>
+									<var>MULTI_CONTAINED_BY_RECORDS</var>
+								</undefined>
+								<defined>
+									<var>CONTAINED_BY_RECORDS/PUBLISHED_GTIN_FLG</var>
+								</defined>
+							</and>
+						</or>
+					</and>
+					<undefined>
+						<var>CONTAINED_BY_RECORDS</var>
+					</undefined>
+				</or>				
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>fwEligibleForDelete</var>
+				<op func="firstListContainsSec">
+					<var>inboundRecordList</var>	
+					<var>CONTAINS_RECORDS/PRODUCTID</var>
+				</op>
+			</assign>
+			<assign>
+				<var>reEligibleForDelete</var>
+				<op func="firstListContainsSec">
+					<var>inboundRecordList</var>	
+					<var>CONTAINED_BY_RECORDS/PRODUCTID</var>
+				</op>
+			</assign>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>getDeleteRecList1</name>
+		<description>Check if GTIN exist in PID as LV</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<var>fwEligibleForDelete</var>
+				<var>reEligibleForDelete</var>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>deltedRecList</var>
+				<var>PRODUCTID</var>	
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

@@ -1,0 +1,2146 @@
+Edited by anvesh !!!
+
+<?xml version="1.0"?>
+<rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+	<name>Catalog Validations</name>
+	<description lang="en">Catalog Data Validations</description>
+	<execution_directive first_pass="skip"/>
+	<declare>
+		<var>CONTAINEDREL</var>
+		<link type="relationship">
+			<literal>ContainedBy</literal>
+		</link>
+	</declare>
+	<declare usage="local">
+		<var>isHightGTIN</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="local">
+		<var>HightGTIN2</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="local">
+		<var>cat_Hinfo</var>
+		<link type="catalog">
+			<literal>HierarchyInformation</literal>
+			<literal>STATE/UNCONFIRMED</literal>
+		</link>
+	</declare>
+	<constraint>
+		<name>findItemisHightestGTIN</name>
+		<description>findItemisHightestGTIN</description>  
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>PRODUCTID</var>
+				</defined>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>HightGTIN</var>
+				<table source="sql" distinct="true">
+					<literal>cat_Hinfo/PRODUCTID</literal>
+					<where type="SQL">
+						<sql>
+							<eq>
+								<literal>cat_Hinfo/PRODUCTID</literal>
+								<var>PRODUCTID</var>
+							</eq>
+						</sql>
+					</where>
+				</table>
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>checkItemisHightestGTIN</name>
+		<description>checkItemisHightestGTIN</description>  
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<eq>
+					<var>HightGTIN</var>
+					<var>PRODUCTID</var>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>isHightGTIN</var>
+				<const type="string">true</const>
+			</assign>
+		</action>
+		<action>
+			<assign>
+				<var>isHightGTIN</var>
+				<const type="string">false</const>
+			</assign>
+		</action>
+	</constraint>
+	<!-- Start:PSI3.1 Validation -->
+	<constraint>
+		<name>GTIN Height override Validation</name>
+		<description>A constraint to validate GTIN Height override</description>		
+		<usefor>
+			<var>HEIGHT_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>HEIGHT_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>HEIGHT_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='HEIGHT_VLU'/>]]></text>
+					<Parameter>
+						<name>HEIGHT_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>GTIN Length override Validation</name>
+		<description>A constraint to validate GTIN Length override</description>		
+		<usefor>
+			<var>DEPTH_VLU</var>
+		</usefor>			
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>DEPTH_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>DEPTH_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='DEPTH_VLU'/>]]></text>
+					<Parameter>
+						<name>DEPTH_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>GTIN Width override Validation</name>
+		<description>A constraint to validate GTIN Width override</description>		
+		<usefor>
+			<var>WIDTH_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>WIDTH_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>WIDTH_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='WIDTH_VLU'/>]]></text>
+					<Parameter>
+						<name>WIDTH_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>Gross weight Override Validation</name>
+		<description>A constraint to validate Gross weight Override</description>		
+		<usefor>
+			<var>GROSS_WEIGHT_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>GROSS_WEIGHT_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>GROSS_WEIGHT_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='GROSS_WEIGHT_VLU'/>]]></text>
+					<Parameter>
+						<name>GROSS_WEIGHT_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- End:PSI3.1 Validation -->
+
+	<!-- Start:PSI3.2 Validation -->
+	<!--	<constraint>
+		<name>Item Data Origin Validation</name>
+		<description>A constraint to validate Item Data Origin</description>                                                     
+
+		<usefor>
+			<var>ITEM_DATA_SOURCE_NME</var>
+		</usefor> 
+		<condition>
+			<and>
+
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>PRODUCTTYPE</var>
+				</defined>
+				<undefined>
+					<var>CONTAINEDREL</var>
+				</undefined>
+				<undefined>
+					<var>ITEM_DATA_SOURCE_NME</var>
+				</undefined>
+			</and>
+		</condition>		
+		<action>                              
+			<check>
+				<explanation>
+                 Item Data Origin should be defined for highest Item Hierarchy
+				</explanation>				
+				<undefined>
+					<var>PRODUCTTYPE</var>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+-->
+	<!--constraint>
+		<name>KMP/KLP Validation</name>
+		<description>A constraint to validate KMP/KLP description</description>                            
+		<usefor>
+			<var>KLP_KMP_CD</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>KLP_KMP_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const><const type="string"></const><const type="string">_ALL</const>                                                                                       
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='KLP_KMP_CD'/>]]></text>
+					<Parameter>
+						<name>KLP_KMP_CD</name>                                                                                
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>Corp Brands PDT Class Code Validation</name>
+		<description>A constraint to validate Corp Brands PDT Class Code</description>                              
+		<usefor>
+			<var>PRODUCT_CLASS_CD</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>PRODUCT_CLASS_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const><const type="string"></const><const type="string">_ALL</const>                                                                                       
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='PRODUCT_CLASS_CD'/>]]></text>
+					<Parameter>
+						<name>PRODUCT_CLASS_CD</name>                                                                 
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	
+	-->
+
+
+	<!--constraint>
+		<name>Corporate Brands Item Type Validation</name>
+		<description>A constraint to validate Corporate Brands Item Type</description>                             
+		<usefor>
+			<var>CORPORATE_BRAND_TYPE_CD</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>CORPORATE_BRAND_TYPE_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_PV</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='CORPORATE_BRAND_TYPE_CD'/>]]></text>
+					<Parameter>
+						<name>CORPORATE_BRAND_TYPE_CD</name>                                                                             
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>Kroger Manufacturing Code Validation</name>
+		<description>A constraint to validate Kroger Manufacturing Code</description>                              
+		<usefor>
+			<var>KROGER_MANUFACTURING_CD</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>KROGER_MANUFACTURING_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_PV</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='KROGER_MANUFACTURING_CD'/>]]></text>
+					<Parameter>
+						<name>KROGER_MANUFACTURING_CD</name>                                                                          
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint-->
+
+
+	<constraint>
+		<name>Case Description Validation</name>
+		<description>A constraint to validate Case Description</description>                     
+		<usefor>
+			<var>Case_DSC_TXT</var>
+		</usefor>  
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>Case_DSC_TXT</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_PV</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='Case_DSC_TXT'/>]]></text>
+					<Parameter>
+						<name>Case_DSC_TXT</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- End:PSI3.2 Validation -->
+
+	<!-- Start:PSI3.4 Validation -->
+
+	<constraint>
+		<name>Item Data Origin hierarchy Validation</name>
+		<description>Item Data Origin assign on Overall Item hierarchy Required at hierarchy level Valid Value are GDSN/NON-GDSN/KROGER INTERNAL</description>   		
+		<usefor>
+			<var>ITEM_DATA_SOURCE_NME</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>ITEM_DATA_SOURCE_NME</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<var>isHightGTIN</var>
+						<const type="string">_ROOT</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='ITEM_DATA_SOURCE_NME'/>]]></text>
+					<Parameter>
+						<name>ITEM_DATA_SOURCE_NME</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<!--constraint>
+		<name>Item ID Validation</name>
+		<description>Item ID</description>   		
+		<usefor>
+			<var>ITEM_ID</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>ITEM_ID</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='ITEM_ID'/>]]></text>
+					<Parameter>
+						<name>ITEM_ID</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint-->
+
+	<constraint>
+		<name>Flash Point Temperature Override vali</name>
+		<description>A constraint to validate Flash Point Temperature - System Override</description>		
+		<usefor>
+			<var>FLASH_POINT_TEMP_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>FLASH_POINT_TEMP_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>FLASH_POINT_TEMP_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_BU</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='FLASH_POINT_TEMP_VLU'/>]]></text>
+					<Parameter>
+						<name>FLASH_POINT_TEMP_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+
+	<constraint>
+		<name>Maximum Inbound Tempe Override vali</name>
+		<description>A constraint to validate Maximum Inbound Temperature - System Override</description>		
+		<usefor>
+			<var>DLV_TO_DC_TEMP_MAX_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>DLV_TO_DC_TEMP_MAX_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>DLV_TO_DC_TEMP_MAX_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_BU</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='DLV_TO_DC_TEMP_MAX_VLU'/>]]></text>
+					<Parameter>
+						<name>DLV_TO_DC_TEMP_MAX_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>Minimum Inbound Temp Override Vali</name>
+		<description>A constraint to validate Minimum Inbound Temperature Override</description>		
+		<usefor>
+			<var>DLV_TO_DC_TEMP_MIN_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>DLV_TO_DC_TEMP_MIN_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>DLV_TO_DC_TEMP_MIN_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_BU</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='DLV_TO_DC_TEMP_MIN_VLU'/>]]></text>
+					<Parameter>
+						<name>DLV_TO_DC_TEMP_MIN_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+	<constraint>
+		<name>Max Perm Storage Temp Override vali</name>
+		<description>A constraint to validate Maximum Permissible Storage Temperature System Override</description>		
+		<usefor>
+			<var>STORAGE_TEM_MAX_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>STORAGE_TEM_MAX_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>STORAGE_TEM_MAX_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_BU</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='STORAGE_TEM_MAX_VLU'/>]]></text>
+					<Parameter>
+						<name>STORAGE_TEM_MAX_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>Min Perm Storage Temp Override vali</name>
+		<description>A constraint to validate Minimum Permissible Storage Temperature System Override</description>		
+		<usefor>
+			<var>STORAGE_TEMP_MIN_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>STORAGE_TEMP_MIN_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>STORAGE_TEMP_MIN_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_BU</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='STORAGE_TEMP_MIN_VLU'/>]]></text>
+					<Parameter>
+						<name>STORAGE_TEMP_MIN_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<name>Gross weight UOM - System Override Validation</name>
+		<description>Gross weight UOM - System Override</description>   		
+		<usefor>
+			<var>GROSS_WEIGHT_UOM_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>GROSS_WEIGHT_UOM_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='GROSS_WEIGHT_UOM_CD'/>]]></text>
+					<Parameter>
+						<name>GROSS_WEIGHT_UOM_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+
+	<constraint>
+		<name>GTIN Length UOM - System Override Validation</name>
+		<description>GTIN Length UOM - System Override</description>   		
+		<usefor>
+			<var>DEPTH_UOM_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>DEPTH_UOM_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='DEPTH_UOM_CD'/>]]></text>
+					<Parameter>
+						<name>DEPTH_UOM_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<name>GTIN Width UOM - System Override Validation</name>
+		<description>GTIN Width UOM - System Override</description>   		
+		<usefor>
+			<var>WIDTH_UOM_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>WIDTH_UOM_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='WIDTH_UOM_CD'/>]]></text>
+					<Parameter>
+						<name>WIDTH_UOM_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<name>GTIN Height UOM - System Override Validation</name>
+		<description>GTIN Height UOM - System Override Override</description>   		
+		<usefor>
+			<var>HEIGHT_UOM_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>HEIGHT_UOM_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='HEIGHT_UOM_CD'/>]]></text>
+					<Parameter>
+						<name>HEIGHT_UOM_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>Kroger - Class Validation</name>
+		<description>Kroger - Class Override</description>   		
+		<usefor>
+			<var>FAMILY_TREE_CLASS_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>FAMILY_TREE_CLASS_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='FAMILY_TREE_CLASS_CD'/>]]></text>
+					<Parameter>
+						<name>FAMILY_TREE_CLASS_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<name>Kroger - SubClass  Validation</name>
+		<description>Kroger - SubClass  Override</description>   		
+		<usefor>
+			<var>FAMILY_TREE_SUB_CLASS_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>FAMILY_TREE_SUB_CLASS_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='FAMILY_TREE_SUB_CLASS_CD'/>]]></text>
+					<Parameter>
+						<name>FAMILY_TREE_SUB_CLASS_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<name>Kroger - Department  Validation</name>
+		<description>Kroger - Department   Override</description>   		
+		<usefor>
+			<var>FAMILY_TREE_DPT_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>FAMILY_TREE_DPT_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='FAMILY_TREE_DPT_CD'/>]]></text>
+					<Parameter>
+						<name>FAMILY_TREE_DPT_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+
+
+	<constraint>
+		<name>Kroger - Recap Department Validation</name>
+		<description>Kroger - Recap Department  Override</description>   		
+		<usefor>
+			<var>FAMILY_TREE_RECAP_DPT_CD</var>
+		</usefor>  
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>FAMILY_TREE_RECAP_DPT_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='FAMILY_TREE_RECAP_DPT_CD'/>]]></text>
+					<Parameter>
+						<name>FAMILY_TREE_RECAP_DPT_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+
+	<constraint>
+		<name>Kroger - Primary Department  Validation</name>
+		<description>Kroger - Primary Department</description>   		
+		<usefor>
+			<var>FAMILY_TREE_PRIMARY_DPT_CD</var>
+		</usefor>  
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>FAMILY_TREE_PRIMARY_DPT_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_ALL</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='FAMILY_TREE_PRIMARY_DPT_CD'/>]]></text>
+					<Parameter>
+						<name>FAMILY_TREE_PRIMARY_DPT_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+
+
+	<constraint>
+		<name>Published GTIN Flag Validation</name>
+		<description>Published GTIN Flag</description>   		
+		<usefor>
+			<var>PUBLISHED_GTIN_FLG</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>PUBLISHED_GTIN_FLG</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<var>isHightGTIN</var>
+						<const type="string">_ROOT</const>                                                                                       
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='PUBLISHED_GTIN_FLG'/>]]></text>
+					<Parameter>
+						<name>PUBLISHED_GTIN_FLG</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<!-- End:PSI3.4 Validation -->
+
+	<!-- Start:PS 5.3 Validation -->
+
+	<!-- 
+	<constraint>
+		<name>Imported Cheese Validation</name>
+		<description>A constraint to validate Imported Cheese</description>                   
+		<usefor>
+			<var>IMPORTED_CHEESE_FLG</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>IMPORTED_CHEESE_FLG</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='IMPORTED_CHEESE_FLG'/>]]></text>
+					<Parameter>
+						<name>IMPORTED_CHEESE_FLG</name>                                                                 
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>In-Store Markdown Validation</name>
+		<description>A constraint to validate In-Store Markdown UPC Needed</description>                   
+		<usefor>
+			<var>MARKDOWN_POSSIBLE_FLG</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>MARKDOWN_POSSIBLE_FLG</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='MARKDOWN_POSSIBLE_FLG'/>]]></text>
+					<Parameter>
+						<name>MARKDOWN_POSSIBLE_FLG</name>                                                                 
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+ -->
+	<constraint>
+		<name>Shelf tag descriptor Validation</name>
+		<description>Shelf tag descriptor</description>   		
+		<usefor>
+			<var>SHELF_TAG_DSC</var>
+		</usefor>   
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>SHELF_TAG_DSC</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='SHELF_TAG_DSC'/>]]></text>
+					<Parameter>
+						<name>SHELF_TAG_DSC</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<!-- 
+	<constraint>
+		<name>Bonus Pack Item Validation</name>
+		<description>A constraint to validate Bonus Pack Item</description>                     
+		<usefor>
+			<var>BONUS_PACK_FLG</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>BONUS_PACK_FLG</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='BONUS_PACK_FLG'/>]]></text>
+					<Parameter>
+						<name>BONUS_PACK_FLG</name>                                                                     
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint> 
+
+
+	<constraint>
+		<name>Kroger Classification of Natural Validation</name>
+		<description>A constraint to validate Kroger Classification of Natural</description>                     
+		<usefor>
+			<var>KROGER_NATURAL_FOODS_FLG</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>KROGER_NATURAL_FOODS_FLG</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='KROGER_NATURAL_FOODS_FLG'/>]]></text>
+					<Parameter>
+						<name>KROGER_NATURAL_FOODS_FLG</name>                                                                     
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint> 
+
+	<constraint>
+		<name>EAS Tag Class Code Validation</name>
+		<description>A constraint to validate EAS Tag Class Code</description>                     
+		<usefor>
+			<var>EAS_TAG_CLASS_CD</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>EAS_TAG_CLASS_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='EAS_TAG_CLASS_CD'/>]]></text>
+					<Parameter>
+						<name>EAS_TAG_CLASS_CD</name>                                                                     
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint> 
+
+ -->
+	<constraint>
+		<name>Net content Kroger UOM Validation</name>
+		<description>A constraint to validate Net content Kroger UOM</description>                   
+		<usefor>
+			<var>NET_CONTENT_UOM_CD</var>
+		</usefor> 
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>NET_CONTENT_UOM_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBUPK</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='NET_CONTENT_UOM_CD'/>]]></text>
+					<Parameter>
+						<name>NET_CONTENT_UOM_CD</name>                                                                        
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+	<constraint>
+		<name>Net content Quantity Kroger UOM SV Vali</name>
+		<description>A constraint to validate Net content Quantity Kroger UOM</description>		
+		<usefor>
+			<var>NET_CONTENT_VLU</var>
+		</usefor>	
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>NET_CONTENT_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>NET_CONTENT_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>	
+						<const type="string">_</const>
+						<const type="string"/>						
+						<const type="string">_SVBUPK</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='NET_CONTENT_VLU'/>]]></text>
+					<Parameter>
+						<name>NET_CONTENT_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+	<!-- 
+	<constraint>
+		<name>PID Promo Code Validation</name>
+		<description>A constraint to validate PID Promo Code</description>                     
+		<usefor>
+			<var>PROMOTIONAL_PACK_CD</var>
+		</usefor>                                           
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>PROMOTIONAL_PACK_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                         
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='PROMOTIONAL_PACK_CD'/>]]></text>
+					<Parameter>
+						<name>PROMOTIONAL_PACK_CD</name>                                                                     
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint> 
+
+ -->	<constraint>
+		<name>GTIN Net wei Over Data Vali</name>
+		<description>A constraint to validate GTIN Net weight Override</description>		
+		<usefor>
+			<var>NET_WEIGHT_VLU</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>			
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">	
+					<op func="concat">
+						<const type="string">D_</const>
+						<var>NET_WEIGHT_VLU</var>
+						<const type="string">_</const>
+						<const type="number">2</const>
+						<const type="string">_NONE</const>							
+					</op>											
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>NET_WEIGHT_VLU</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>						
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='NET_WEIGHT_VLU'/>]]></text>
+					<Parameter>
+						<name>NET_WEIGHT_VLU</name>					
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>GTIN Net weight Override UOM Validation</name>
+		<description>GTIN Net weight Override UOM</description>   		
+		<usefor>
+			<var>NET_WEIGHT_UOM_CD</var>
+		</usefor>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>		
+		<action>                                              
+			<assign>
+				<var>validationmsg</var>
+				<op func="UIValidation">            
+					<op func="concat">
+						<const type="string">DUMMY</const>                                                                                                
+					</op>                                                                                                                                                                   
+					<op func="concat">
+						<const type="string">H_</const>
+						<var>NET_WEIGHT_UOM_CD</var>
+						<const type="string">_</const>
+						<var>PRODUCTTYPE</var>
+						<const type="string">_</const>
+						<var>SALES_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>PROCUREMENT_VARIANT_FLG</var>
+						<const type="string">_</const>
+						<var>ISBASEUNIT</var>
+						<const type="string">_</const>
+						<const type="string"/>
+						<const type="string">_SVBU</const>                                                                                        
+					</op>
+				</op>
+			</assign>
+			<check>
+				<explanation>
+					<text>
+						<![CDATA[<Parameter name='NET_WEIGHT_UOM_CD'/>]]></text>
+					<Parameter>
+						<name>NET_WEIGHT_UOM_CD</name>                                                                              
+						<var>validationmsg</var>
+					</Parameter>
+				</explanation>
+				<undefined>
+					<op func="trim">
+						<var>validationmsg</var>
+					</op>
+				</undefined>
+			</check>
+		</action>
+	</constraint>
+
+
+fadgd
+fgfdfddf
+
+
+</rulebase>

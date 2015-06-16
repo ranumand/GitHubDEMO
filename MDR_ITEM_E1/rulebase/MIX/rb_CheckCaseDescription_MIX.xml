@@ -1,0 +1,128 @@
+<rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+    <name>rb_mix_CheckCaseDescription</name>
+    <description lang="en">Check CheckCaseDescription</description>
+    <declare usage="output">
+        <var>has_SizeChange</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="output">
+        <var>IS_CHANGED_CaseDesc</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="input">
+        <var>SubmissionReasonCode</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>HasSubmissionReasonCode</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="output">
+        <var>HasKroEventChange</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="input">
+        <var>isShipper</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>isShipperOutput</var>
+        <datatype type="string"/>
+    </declare>
+    <constraint>
+        <name>getCheckSizeChangeForNetContent</name>
+        <description>con4</description>
+        <usefor>
+            <var>has_SizeChange</var>
+        </usefor>
+        <condition>
+            <and>
+                <and>
+                    <neq>
+                        <var>isShipper</var>
+                        <const type="string">TRUE</const>
+                    </neq>
+                    <or>
+                        <changed>
+                            <var>NET_CONTENT_VLU</var>
+                            <const type="string">PREVIOUS_CONFIRMED_VERSION</const>
+                        </changed>
+                        <changed>
+                            <var>NET_CONTENT_UOM_CD</var>
+                            <const type="string">PREVIOUS_CONFIRMED_VERSION</const>
+                        </changed>
+                    </or>
+                </and>
+                <eq>
+                    <var>ISBASEUNIT</var>
+                    <const type="string">TRUE</const>
+                </eq>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var>has_SizeChange</var>
+                <const type="string">true</const>
+            </assign>
+            <assign>
+                <var>isShipperOutput</var>
+                <var>isShipper</var>
+            </assign>
+        </action>
+        <action>
+            <assign>
+                <var>isShipperOutput</var>
+                <var>isShipper</var>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>CheckSubmissionReasonCode</name>
+        <description>con4</description>
+        <usefor>
+            <var>PublishToItemAdapter</var>
+        </usefor>
+        <condition>
+            <and>
+                <var>RECORD_IS_ROOT</var>
+                <gt>
+                    <op func="length"> <op func="trim"> <var>SubmissionReasonCode</var>
+                        </op>
+                    </op>
+                    <const type="number">0</const>
+                </gt>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var>HasSubmissionReasonCode</var>
+                <const type="string">true</const>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>CheckForKrogerEventCodeChange</name>
+        <description>Check for change to Kroger Event Code or Type</description>
+        <usefor>
+            <var>HasKroEventChange</var>
+        </usefor>
+        <condition>
+            <or>
+                <changed>
+                    <var>EVENTCODE</var>
+                    <const type="string">PREVIOUS_VERSION</const>
+                </changed>
+                <changed>
+                    <var>EVENTTYPE</var>
+                    <const type="string">PREVIOUS_VERSION</const>
+                </changed>
+            </or>
+        </condition>
+        <action>
+            <assign>
+                <var>HasKroEventChange</var>
+                <const type="string">true</const>
+            </assign>
+        </action>
+    </constraint>
+</rulebase>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><Workflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1.3">
+<Owner>TIBCO</Owner>
+<Name>wf_PublishItemToNotificationQueue_MIX</Name>
+<Description>Sub flow for Publishing mlxml on Notification queue</Description>
+<Parameter name="inDoc" direction="in" type="document" eval="variable">1</Parameter>
+<Parameter name="OutDocument" direction="out" type="document" eval="variable">workDoc</Parameter>
+<Parameter name="workDoc" direction="out" type="document" eval="variable"/>
+<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+<!--CIM Activities-->
+<Activity Name="CompareItemConfirmVersionBeforePublishToNotifQueue">
+<Start/>
+<Action>CompareRecord</Action>
+<Description>Compare with previous confirmed version and generate an output document</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+<Parameter name="CompareKeyword" direction="in" type="string" eval="constant">PREVIOUS_CONFIRMED_VERSION</Parameter>
+<Parameter name="FullCompareFlag" direction="in" type="string" eval="constant">False</Parameter>
+<Parameter name="CompareMode" direction="in" type="string" eval="constant">BUNDLE</Parameter>
+<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+</Activity>
+<Activity Name="PublishItemsToNotificationQueue">
+<Action>SendProtocolMessage</Action>
+<Description>Publish mlxml to BW Notification Queue</Description>
+<Execution>ASYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">PUBLISHITEM</Parameter>
+<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">OUTBOUND_EMAIL_MSG</Parameter>
+<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+</Activity>
+<Activity Name="SetStatusToError">
+<Action>UpdateEvent</Action>
+<Description>Set the event status to Error/Done</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventStatus" direction="in" type="string" eval="constant">ERROR</Parameter>
+<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+</Activity>
+<!--CIM Transitions-->
+<Transition FromActivity="CompareItemConfirmVersionBeforePublishToNotifQueue" ToActivity="PublishItemsToNotificationQueue"/>
+<Transition type="error" FromActivity="Any" ToActivity="SetStatusToError"/>
+</Workflow>

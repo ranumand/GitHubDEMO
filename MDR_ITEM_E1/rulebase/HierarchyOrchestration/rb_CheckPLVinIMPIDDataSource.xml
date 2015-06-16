@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will check if GTIN from VIP(vendor integration portal)
+	is exist in PID as a PLV(Procurement logistic variant). -->
+
+	<name>CheckPLVinPIDItemDataSource</name>
+	<description>Check if any VIP GTIN matches with the PID PLV</description>
+
+	<declare>
+		<var>ITEM_MASTER_DS_REF</var>
+		<link type="datasource">
+			<literal>ITEM_MASTER_DS</literal>
+		</link>
+	</declare>
+
+	<declare usage="output">
+		<var>isGTINExistAsPIDPLV</var>
+		<datatype type="string"/>
+	</declare>
+
+	<declare usage="local">
+		<var>OrchestrationId</var>	
+	</declare>
+
+	<declare usage="input">
+		<var>itemsInHierarchy</var>
+	</declare>
+
+	<declare usage="local">
+		<var>itemsArray</var>
+		<datatype type="array"/>
+	</declare>
+	<!-- This constraint is used for converting the items string into Array -->
+	<constraint>
+		<name>ConvertRecordKeyStringToArray</name>
+		<description>Convert record Keys string to array.</description>
+		<condition>
+			<defined>
+				<var>itemsInHierarchy</var>				
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>itemsArray</var>
+				<op func="convertDelimitedStringToArray">
+					<var>itemsInHierarchy</var>
+					<const type="string">,</const>
+					<const type="string">RulebaseCustomFunctionHelper</const>
+					<var>SESSION/ENTERPRISE_INTERNAL_NAME</var>
+				</op>
+			</assign>
+		</action>
+	</constraint>
+
+
+	<!-- Check if any items from VIP matches with item master data source as PLV -->
+	<constraint>
+		<name>CheckPLVExistance</name>
+		<description>Check if GTIN exist in PID as PLV</description>
+		<condition>
+			<defined>
+				<var>itemsArray</var>				
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>OrchestrationId</var>
+				<table source="sql">
+					<literal>ITEM_MASTER_DS_REF/ITEM_ID</literal>
+					<where>
+						<sql>
+							<and>
+								<in>
+									<literal>ITEM_MASTER_DS_REF/ITEM_ID</literal>
+									<var>itemsArray</var>
+								</in>
+								<eq>
+									<literal>ITEM_MASTER_DS_REF/PROCUREMENT_VARIANT_FLG</literal>
+									<const type="string">Y</const>
+								</eq>
+							</and>	
+						</sql>
+					</where>
+				</table>
+			</assign>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>PopulateGTINExistFlag</name>
+		<description>Populate the GTIN exist flag</description>
+		<condition>								
+			<defined>
+				<op func="strip">
+					<var>OrchestrationId</var>
+				</op>
+			</defined>			
+		</condition>
+		<action>
+			<assign>
+				<var>isGTINExistAsPIDPLV</var>
+				<const type="string">True</const>
+			</assign>					
+		</action>
+	</constraint>
+
+</rulebase>

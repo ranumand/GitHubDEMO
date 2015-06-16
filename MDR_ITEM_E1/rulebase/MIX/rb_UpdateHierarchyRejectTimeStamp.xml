@@ -1,0 +1,23 @@
+<rulebase metaversion="1.0">
+    <name>rb_UpdateHierarchyRejectTimeStamp</name>
+    <description lang="">update reject timestamp</description>
+    
+    <constraint>
+        <name>UpdateHierarchyReectTimeStamp</name>
+        <description>AssignCurrentTimeStamp</description>
+        <condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">HIERARCHYREJECT</const>
+				</eq>
+			</and>
+		</condition>
+        <action>
+            <assign>
+                <var>REJECT_SENT_TS</var>
+                <var>SESSION/timestamp</var>
+            </assign>
+        </action>
+    </constraint>
+</rulebase>

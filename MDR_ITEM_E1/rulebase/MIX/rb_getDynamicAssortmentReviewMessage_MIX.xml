@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will gets the highest hierarhcy Designation-->
+	<name>fetchHighestHierarchyDesignation</name>
+	<description>Get highest hierarhcy Designation</description>
+	<declare usage="input">
+		<var>DynamicAssortment_pv_gtin</var>
+	</declare>
+	<declare usage="input">
+		<var>Publish_GTIN</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="input">
+		<var>operationtype</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="input">
+		<var>PVItemID</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="input">
+		<var>FAMILY_TREE_CLASS_CD1</var>
+		<datatype type="string"/>
+	</declare>	
+	<declare usage="output">
+		<var>reviewmsg</var>
+		<datatype type="string"/>
+	</declare>
+
+	<!--
+condition : The dynamic assortment designation is present at some level of the item hierarchy but not on the PV
+
+message : Dynamic Assortment needs to be designated on the Kroger Procurement Variant (PV). Enter the designation at the PV GTIN (<GTIN>) for this Hierarchy (<Pub GTIN>) and resubmit with the original operationtype type (NEW/INITIALLOAD).
+-->
+
+	<constraint>
+		<name>checkifPVisdynamicassortmentItem</name>
+		<description>if PV is not dynamic assortment Item then send review message</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<undefined>
+					<var>DynamicAssortment_pv_gtin</var>				
+				</undefined>
+				<eq>
+					<var>PUBLISHED_GTIN_FLG</var>
+					<const type="string">TRUE</const>
+				</eq>				
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>reviewmsg</var>
+				<op func="concat">
+					<const type="string">Dynamic Assortment needs to be designated on the Kroger Procurement Variant (PV). Enter the designation at the PV GTIN (</const>	
+					<var>PVItemID</var>
+					<const type="string">) for this Hierarchy (</const>	
+					<var>Publish_GTIN</var>
+					<const type="string">) and resubmit with the original operation type (</const>
+					<var>operationtype</var>
+					<const type="string">).</const>					
+				</op>				
+			</assign>
+		</action>
+	</constraint>
+
+	<!--
+condition : The dynamic assortment contained GTINs (consumers) belong to different Family tree class
+
+message : Kroger Family Tree class at Base unit level cannot be different for a Dynamic assortment hierarchy. Please review and resubmit the hierarchy  (<Pub GTIN>) with the original operationtype type (NEW/INITIALLOAD) after correcting.
+
+-->
+
+	<constraint>
+		<name>checkifalbaseunitclassaresameornot</name>
+		<description>if all base unit class are same or not</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>				
+				<defined>
+					<var>DynamicAssortment_pv_gtin</var>				
+				</defined>	
+				<eq>
+					<var>ISBASEUNIT</var>					
+					<const type="string">TRUE</const>				
+				</eq>
+				<neq>
+					<var>FAMILY_TREE_CLASS_CD</var>					
+					<var>FAMILY_TREE_CLASS_CD1</var>					
+				</neq>				
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>reviewmsg</var>
+				<op func="concat">
+					<const type="string">Kroger Family Tree class at Base unit level cannot be different for a Dynamic assortment hierarchy. Please review and resubmit the hierarchy  (</const>	
+					<var>Publish_GTIN</var>
+					<const type="string">) with the original operation type (</const>
+					<var>operationtype</var>
+					<const type="string">) after correcting.</const>	
+				</op>				
+			</assign>
+		</action>
+	</constraint>
+
+
+</rulebase>

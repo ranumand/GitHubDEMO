@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Form>
+	<Field>
+        <ID>HierarchyRejectCICIM</ID>
+        <InputFrom>/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/Extension[@name='HierarchyRejectCICIM']/Value/text()</InputFrom>
+         <OutputTo>(//Form/Field/ID[text()='HierarchyRejectCICIM'])/following-sibling::Value</OutputTo>
+        <Value/>
+    </Field>	
+</Form>	

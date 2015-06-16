@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0"><name>Validations</name><description> Validations</description>
+<declare usage="input">
+		<var>ITEM_EXISTS_FLAG1</var>
+</declare> 
+<declare usage="output">
+		<var>ITEM_EXISTS_FLAG2</var>
+</declare> 
+ <constraint>
+<name>CheckMandatoryAttributes</name>
+<description>CheckMandatoryAttributes</description>
+
+		<action>
+			<check>
+			<explanation>ITEM_MASTER is a mandatory Value</explanation>
+				<and>
+					<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+					</eq>
+				</and>
+			</check>
+		</action>
+</constraint>
+
+	<constraint>
+	<name>AssignITEM_EXISTS_FLAG1toITEM_EXISTS_FLAG2</name>
+	<description>Assign ITEM_EXISTS_FLAG1 to ITEM_EXISTS_FLAG2</description>	
+	<condition>
+		<and>
+			<defined>ITEM_EXISTS_FLAG1</defined>
+		</and>
+	</condition>
+	<action>
+		<assign>
+			<var>ITEM_EXISTS_FLAG2</var>
+			<var>ITEM_EXISTS_FLAG1</var>		 
+		</assign>
+		 
+	</action>	
+</constraint>
+
+</rulebase>

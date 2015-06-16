@@ -1,0 +1,552 @@
+<?xml version="1.0"?>
+<!--
+    $Author: adhole $
+    $Revision: 83790 $
+    Parameters:
+    inDoc - input
+	-->
+<Workflow Version="1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="Workflow.xsd">
+	<Owner>TIBCO</Owner>
+	<Name>wfin26prodnotifretailerv4</Name>
+	<Description>Retailer record data notification message processing</Description>
+	<Parameter direction="in" name="inDoc" type="document" eval="variable">1</Parameter>
+	<Parameter name="Environment_Name1" direction="in" eval="variable" type="string">Environment_Name</Parameter>
+	<Parameter name="Skip_Cyclic_Chk_Env_Name1" direction="in" eval="variable" type="string">Skip_Cyclic_Chk_Env_Name</Parameter>	
+	<Parameter direction="out" name="errorFlag" type="boolean" eval="variable">errorFlag</Parameter>
+	<Parameter direction="out" name="ParentGTIN" type="string" eval="variable">ParentGTIN1</Parameter>
+	<Parameter direction="out" type="boolean" eval="variable" name="isDelete"/>
+	<Parameter direction="out" name="noneInWorkflow" type="boolean" eval="variable">NoneInWorkflow</Parameter>
+
+	<Activity Name="AddMsgInfoToEventCIN">
+		<Start/>
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event state to Receive</Description>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="xpath" source="/Message/Body/Document/@subtype">inDoc</Parameter>
+		<Parameter direction="in" name="deploymentMode" type="string" eval="xpath" source="/Message/@messageType">inDoc</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">RECEIVE</Parameter>
+		<Parameter direction="in" name="eventType" type="string" eval="constant">PRODUCT</Parameter>
+	</Activity>
+
+	<Activity Name="SendCICRejectForCyclicrelationship">
+		<Action>InitiateSubFlow</Action>
+		<Description>Spawn the subworkflow for CIC REJECT and update MDM</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SPAWNWORKFLOW</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="ProcessID">MDRITME1/workflow/MIX/wf_SendCICReject_MIX.xml</Parameter>
+		<Parameter direction="in" type="boolean" eval="constant" name="SubflowFlag">true</Parameter>
+		<Parameter direction="out" type="string" eval="variable" name="HierarchyMatch">HierarchyMatch</Parameter>
+		<Parameter name="Environment_Name2" direction="in" eval="variable" type="string">Environment_Name1</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+	</Activity>
+
+	<Activity Name="CreateItemMasterDocument">
+		<Action>Translate</Action>
+		<Description>Create item master draft document.</Description>
+		<Parameter direction="in" name="Derived" type="string" eval="constant">true</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TRANSLATE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Translator">XSLT</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Map">MDRITME1/maps/itemMasterDocument.xsl</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="OutputFormat">mlXML</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Normalize">Post</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">item_master_Doc</Parameter>
+	</Activity>
+	<Activity Name="GetLatestRecord">
+		<Action>GetRecord</Action>
+		<Description lang="en">Get latest record data</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GETPRODUCTINFO</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">item_master_Doc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Agency">SOURCE</Parameter>
+		<Parameter direction="in" eval="xpath" type="long" name="MasterCatalog" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">item_master_Doc</Parameter>
+		<Parameter direction="in" eval="constant" type="long" name="RelationshipDepth">-1</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">item_master_Doc</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName">Item_Master_Corporate_Average_List_Cost</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName1">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName2">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName3">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName4">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName5">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName6">Item_Master_Authorized_Region_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName7">Item_Master_Measures_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName8">Item_Master_Weight_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName9">Item_Master_Temperature_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName10">Item_Master_GPC_BRICK_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName11">Item_Master_Peg_Measurement_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName12">Images_for_Item</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName13">Descriptions_for_Item</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName14">Item_Organic_Claim</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName15">Item_Master_Manufacturer_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName16">Item_Master_CataloguePrice_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName17">Item_Master_FlashPointTemperature_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName18">Item_Master_OrderSizingFactor_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName19">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName20">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName21">Item_Master_FunctionalName_MVL</Parameter>	
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName22">Item_Master_GTINName_MVL</Parameter>	
+		<Parameter direction="in" eval="constant" type="string" name="RelationshipName23">Item_Master_HandlingInstructionCode_MVL</Parameter>			
+	</Activity>
+	<Activity Name="CompareDocument">
+		<Action>Translate</Action>
+		<Description>Compare original InDocument and document formed after Save.</Description>
+		<Parameter direction="in" name="Derived" type="string" eval="constant">true</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TRANSLATE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Translator">XSLT</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Map">MDRITME1/maps/compareDocument.xsl</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="OutputFormat">mlXML</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Normalize">Post</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">item_master_Doc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">comparedDoc</Parameter>
+	</Activity>
+	<Activity Name="ConvertRecordKeyStringToArray">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Convert record key string to array.</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<Parameter direction="in" name="Rulebase" eval="constant" type="string">MDRITME1/rulebase/rb_ConvertRecordKeyStringToArray.xml</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">comparedDoc</Parameter>
+		<Parameter direction="in" name="RecordKeyString" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/text()">comparedDoc</Parameter>
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter direction="in" name="ExecutionMode" type="string" eval="constant">NoRecords</Parameter>
+		<Parameter direction="out" name="RecordKeyArray" type="arraylist" eval="variable">RecordKeyArray</Parameter>
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+	</Activity>
+	<Activity Name="DeleteComparedRecords">
+		<Action>DeleteRecord</Action>
+		<Description lang="en">Delete records after comparing document.</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DELETERECORDS</Parameter>
+		<Parameter direction="in" type="arraylist" eval="variable" name="RecordKey">RecordKeyArray</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<Parameter direction="in" name="IncludeDraftRecords" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsProcessed">RecordsProcessed</Parameter>
+	</Activity>
+	<Activity Name="GetProductInfo">
+		<Action>VerifyRecordStatus</Action>
+		<Description lang="en">Retrieve the record data from the repositiry</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GETPRODUCTINFO</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Agency">SOURCE</Parameter>
+		<Parameter direction="in" eval="rule" source="Repository Selection" type="string" name="MasterCatalog">inDoc</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="OriginalDocID" source="//catalogueItemNotificationIdentification/uniqueCreatorIdentification/text()">inDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="arraylist" name="numberOfProducts" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem">inDoc</Parameter>
+		<Parameter direction="in" name="sender" type="string" eval="xpath" source="/Message/Header/MessageHeader[@origin='Sender']/Enterprise/PartyID/PartyName/text()">inDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+		<Parameter direction="out" name="AllFound" type="string" eval="variable">productFound</Parameter>
+		<Parameter direction="out" name="NoneInWorkflow" type="boolean" eval="variable">NoneInWorkflow</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">StepIDForWait</Parameter>
+	</Activity> 
+	<Activity Name="SaveRecordAsUnConfirmed">
+		<Action>SaveRecord</Action>
+		<Description lang="en">Create new versions of records</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SAVERECORD</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="GenerateExistenceError" type="string" eval="constant">false</Parameter>
+		<Parameter direction="in" name="RetainExistingRelationships" type="boolean" eval="constant">TRUE</Parameter>
+		<Parameter direction="in" name="OverrideConflict" type="boolean" eval="constant">TRUE</Parameter>			
+		<Parameter direction="in" name="Status" type="string" eval="constant">UNCONFIRMED</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<!-- Severity set to 0 to prevent catalogvalidation errors from creating new product versions -->
+		<Parameter direction="in" name="Severity" type="long" eval="constant">0</Parameter>
+		<Parameter direction="in" eval="constant" name="Overwrite" type="boolean">true</Parameter>
+		<Parameter direction="in" name="Rulebase" type="string" eval="constant">standard/rulebase/rbgenerateid.xml</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsAttempted">recordsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsWithErrors">errorsFound</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsWithWarnings">warningsFound</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+	</Activity>
+
+	<Activity Name="SaveRecordAsUnConfirmedForDELETE_MIX">
+		<Action>SaveRecord</Action>
+		<Description lang="en">Create new versions of records</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SAVERECORD</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="GenerateExistenceError" type="string" eval="constant">false</Parameter>
+		<Parameter direction="in" name="RetainExistingRelationships" type="boolean" eval="constant">TRUE</Parameter>
+		<Parameter direction="in" name="Status" type="string" eval="constant">UNCONFIRMED</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<!-- Severity set to 0 to prevent catalogvalidation errors from creating new product versions -->
+		<Parameter direction="in" name="Severity" type="long" eval="constant">0</Parameter>
+		<Parameter direction="in" name="Rulebase" type="string" eval="constant">standard/rulebase/rbgenerateid.xml</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsAttempted">recordsAttempted</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsWithErrors">errorsFound</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="RecordsWithWarnings">warningsFound</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+	</Activity>
+
+	<Activity Name="GetProductInfo2">
+		<Action>VerifyRecordStatus</Action>
+		<Description lang="en">Populate CIN reference value in repository</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">GETPRODUCTINFO</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Agency">SOURCE</Parameter>
+		<Parameter direction="in" eval="rule" source="Repository Selection" type="string" name="MasterCatalog">workDoc</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">workDoc</Parameter>
+		<Parameter direction="in" eval="xpath" type="string" name="OriginalDocID" source="//catalogueItemNotificationIdentification/uniqueCreatorIdentification/text()">workDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="ManageRecordCollection">
+		<Action>ManageRecordCollection</Action>
+		<Description lang="en">Construct record list</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYVERSION</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter>
+		<Parameter direction="in" name="SetRecordListReadOnly" type="boolean" eval="constant">false</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="constant">LATEST</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">initialRecordList</Parameter>
+		<Parameter direction="in" name="BundlingOption" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">false</Parameter>
+	</Activity>
+	<Activity Name="CheckCyclicRelationship">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Apply validation rules</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<Parameter direction="in" name="Rulebase" eval="constant" type="string">MDRITME1/rulebase/rb_CheckCyclicRelationship.xml</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">NOSAVE</Parameter>
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="hasCyclicRelationship" type="arraylist" eval="variable">hasCyclicRelationship</Parameter>
+		<Parameter direction="in" name="AsynProcessIndicator" type="boolean" eval="constant">false</Parameter>
+	</Activity>
+	<Activity Name="EvaluateRuleBaseContains">
+		<Action>EvaluateRuleBase</Action>
+		<Description lang="en">Apply validation rules</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">EVALUATERULEBASE</Parameter>
+		<Parameter direction="in" name="Rulebase" eval="constant" type="string">MDRITME1/rulebase/rb_CheckItemMaster.xml</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">initialRecordList</Parameter>
+		<Parameter direction="in" name="Severity" type="long" eval="constant">9</Parameter>
+		<Parameter direction="in" name="RemoveRecord" type="string" eval="constant">FATAL</Parameter>
+		<Parameter direction="in" name="SaveFlag" type="string" eval="constant">SAVE</Parameter>
+		<Parameter direction="out" name="ValidationErrors" type="long" eval="variable">fatalErrors</Parameter>
+		<Parameter direction="out" name="ValidationErrors1" type="long" eval="variable">warningErrors</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+	</Activity>
+	<Activity Name="ConvertRecordsToOutputFormat1Sync">
+		<Action>ConvertRecordToOutput</Action>
+		<Description lang="en">Convert records to output format</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CONVERTTOOUTPUT</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">initialRecordList</Parameter>
+		<Parameter direction="in" name="CatalogOutputMap" type="string" eval="constant">ITEM_MASTER_1SYNC_OM</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">mcRecordList</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+	</Activity>
+	<Activity Name="CheckForMoreAcceptMessages">
+		<Action>NoOperation</Action>
+		<Description lang="en">Check if more review messages need to be sent</Description>
+	</Activity>
+	<Activity Name="AcceptSent">
+		<Action>NoOperation</Action>
+		<Description lang="en">Accept confirmation received</Description>
+	</Activity>
+	<Activity Name="AddExternalKeyInMlXmlDocument">
+		<Action>Translate</Action>
+		<Description>Add external key in mlXml document.</Description>
+		<Parameter direction="in" name="Derived" type="string" eval="constant">true</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TRANSLATE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Translator">XSLT</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Map">MDRITME1/maps/addExternalKey.xsl</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="OutputFormat">mlXML</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Normalize">Post</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">inDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">inDoc</Parameter>
+		<Parameter direction="out" eval="variable" type="long" name="numberOfUnMappedAttributes">0</Parameter>
+	</Activity> 
+	<Activity Name="ConversionWorkflow_MIX">
+		<Action>InitiateSubFlow</Action>
+		<Description>Spawn the subworkflow</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SPAWNWORKFLOW</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="ProcessID">MDRITME1/workflow/MIX/wf_ConversionCoreFlow_MIX</Parameter>
+		<Parameter direction="in" type="boolean" eval="constant" name="SubflowFlag">true</Parameter>
+		<Parameter direction="out" name="errorFlag" type="boolean" eval="variable">errorFlag</Parameter>
+		<Parameter direction="out" type="string" eval="variable" name="CoreConversionWFFlag">CoreConversionWFFlag</Parameter>
+		<Parameter name="Environment_Name3" direction="in" eval="variable" type="string">Environment_Name1</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+	</Activity>
+
+	<Activity Name="HandleMessagingDataPoolsForAccept">
+		<Action>HandleProtocolMessaging</Action>
+		<Description lang="en">Begin sending accept message</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CREATEMESSAGE</Parameter>
+		<Parameter direction="in" name="CommandsPerMessage" type="long" eval="constant">50</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ResponseRequired" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" name="ProtocolMessagingCommand" type="string" eval="variable">nextCmd</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">messageDoc</Parameter>
+		<Parameter direction="out" name="ProtocolMessagingNextCommand" type="string" eval="variable">nextCmd</Parameter>
+		<Parameter direction="out" name="ProtocolMessageGenerated" type="boolean" eval="variable">msgGenerated</Parameter>
+	</Activity>
+	<Activity Name="TranslateAcceptMessageFor1Sync">
+		<Action>Translate</Action>
+		<Description lang="en">Generate the accept message</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">TRANSLATE</Parameter>
+		<Parameter direction="in" name="Derived" type="string" eval="constant">false</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Translator">XSLT</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Map">MDRITME1/maps/1syncCIC.xsl</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="OutputFormat">XML</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Normalize">None</Parameter>
+		<Parameter direction="in" eval="variable" type="document" name="InDocument">messageDoc</Parameter>
+		<Parameter name="Xsl_Param_Environment_Name" direction="in" eval="variable" type="string">Environment_Name1</Parameter>
+		<Parameter direction="out" eval="variable" type="document" name="OutDocument">syncDoc</Parameter>
+	</Activity>
+
+	<Activity Name="SendAcceptTo1Sync">
+		<Action>SendProtocolMessage</Action>
+		<Description>Send accept message to 1Sync</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SENDMESSAGE</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="BizProtocol">JMS</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">syncDoc</Parameter>
+		<Parameter direction="in" name="SupplierCredential" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter direction="in" name="SenderCredential" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter direction="in" name="ChannelCredential" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Credential[@domain='GLN']/Identity/text()">inDoc</Parameter>
+		<Parameter direction="in" name="ChannelOrganizationName" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/PartyName/text()">inDoc</Parameter>
+		<Parameter direction="in" name="MessageID1" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/PackageData/@messageID" type="string" eval="xpath">messageDoc</Parameter>
+		<Parameter direction="in" type="boolean" eval="constant" name="TrackMessageResponse">false</Parameter>
+		<Parameter direction="out" name="OutDocument" eval="variable" type="document">responseDoc</Parameter>
+	</Activity>
+	<Activity Name="IdentifyProtocolOperationsForAccept">
+		<Action>IdentifyProtocolOperations</Action>
+		<Description lang="en">Identify operations to be performed for each record</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">pl1</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="in" name="ACCEPT_FLAG" type="string" eval="constant">TRUE</Parameter>
+		<Parameter direction="in" name="DATAPOOL_ID" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="in" name="BUYER_ID" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Supplier']/Organization/PartyID/DBID/text()">workDoc</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="AsyncStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYOPERATION</Parameter>
+	</Activity>
+
+	<Activity Name="AbortHandleMessagingDataPools">
+		<Action>HandleProtocolMessaging</Action>
+		<Description lang="en">Abort all message processing</Description>
+		<Parameter direction="in" name="CommandsPerMessage" type="long" eval="constant">50</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">workDoc</Parameter>
+		<Parameter direction="in" name="ResponseRequired" type="boolean" eval="constant">true</Parameter>
+		<Parameter direction="in" name="ProtocolMessagingCommand" type="string" eval="constant">ABORT</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">0</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">messageDoc</Parameter>
+		<Parameter direction="out" name="ProtocolMessagingNextCommand" type="string" eval="variable">nextCmd2</Parameter>
+		<Parameter direction="out" name="ProtocolMessageGenerated" type="boolean" eval="variable">msgGenerated2</Parameter>
+	</Activity>
+
+	<Activity Name="SetEventStatusToSuccess">
+		<Action>UpdateEvent</Action>
+		<Description>Workflow completed</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">SUCCESS</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+	</Activity>
+
+	<Activity Name="RejectDueToWorkflowError">
+		<Action>Send</Action>
+		<Description lang="en">Send workflow error email</Description>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Protocol">workDoc</Parameter>
+		<Parameter direction="in" eval="rule" source="Message or Workflow Completion" type="string" name="Address">workDoc</Parameter>
+		<Parameter direction="in" name="Sender" type="string" eval="constant">support@tibco.com</Parameter>
+		<Parameter direction="in" name="Presentation" type="string" eval="constant">com.tibco.mdm.ui.workflow.engine.emailtemplates.EmailProductWorkflowError</Parameter>
+		<Parameter direction="in" eval="constant" type="string" name="Form">standard/forms/fm26ca.xml</Parameter>
+		<Parameter direction="in" type="document" eval="variable" name="InDocument">workDoc</Parameter>
+	</Activity>
+	<Activity Name="SetEventStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description>Error occurred in workflow</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">ERROR</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+		<Parameter direction="in" name="errorFlag" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<Activity Name="HierarchyOrchestrationSubflow">
+		<Action>InitiateSubFlow</Action>
+		<Description>Call subflow Hierarchy Orchestration</Description>
+		<Execution>SYNCHR</Execution>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+		<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/HierarchyOrchestration/wf_HierarchyOrchestration.xml</Parameter>
+		<Parameter name="SubflowFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>	
+		<Parameter name="Environment_Name4" direction="in" type="string" eval="variable">Environment_Name1</Parameter>
+		<Parameter name="errorFlag" direction="out" type="boolean" eval="variable">errorFlag</Parameter>
+		<Parameter direction="out" name="ParentGTIN" type="string" eval="variable">ParentGTIN1</Parameter>
+	</Activity>
+	
+	<Transition FromActivity="AddMsgInfoToEventCIN" ToActivity="HierarchyOrchestrationSubflow">
+			<Description>Call Hierarchy Orchestration flow when repository is HierarchyOrchestration</Description>
+		<Rule>
+			<Parameter name="CatalogName" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/BaseName/text()" direction="in">inDoc</Parameter>
+				<Parameter direction="in" name="inputParamString" eval="constant" type="string">HierarchyOrchestration</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				       com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(CatalogName, inputParamString); 
+				]]>						  
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="AddMsgInfoToEventCIN" ToActivity="GetProductInfo">
+		<Description>Check whether external key exist in mlXml document.</Description>
+		<Rule>
+			<Parameter name="ProductId" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/ExternalKey/Attribute[@name='PRODUCTID']/Value/text()" direction="in">inDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+					 com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotEmpty(ProductId);
+				]]>						  
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="AddMsgInfoToEventCIN" ToActivity="AddExternalKeyInMlXmlDocument"/>
+	<Transition FromActivity="AddExternalKeyInMlXmlDocument" ToActivity="GetProductInfo"/> 
+	<Transition FromActivity="GetProductInfo" ToActivity="SaveRecordAsUnConfirmedForDELETE_MIX">
+		<Description>Go to ItemSubmissionPurge when operation DELETE</Description>
+		<Rule>
+			<Parameter name="operation" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/os:envelope/catalogueItemNotification/document/hierarchyInformation/operation/text()" direction="in">workDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+               result = (operation.equals("DELETE"));
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="SaveRecordAsUnConfirmedForDELETE_MIX" ToActivity="ConversionWorkflow_MIX"/>	
+	<Transition FromActivity="GetProductInfo" ToActivity="CreateItemMasterDocument"/>
+	<Transition FromActivity="CreateItemMasterDocument" ToActivity="GetLatestRecord"/>
+	<Transition FromActivity="GetLatestRecord" ToActivity="CompareDocument"/>
+	<Transition FromActivity="CompareDocument" ToActivity="ConvertRecordKeyStringToArray">
+		<Description>Check if any record key exist for delete.</Description>
+		<Rule>
+			<Parameter direction="in" name="RecordKeyStr" type="string" eval="xpath" source="/Message/Body/Document/OriginalDocument/text()">comparedDoc</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.isNotEmpty(RecordKeyStr);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CompareDocument" ToActivity="SaveRecordAsUnConfirmed"/>
+	<Transition FromActivity="ConvertRecordKeyStringToArray" ToActivity="DeleteComparedRecords"/>
+	<Transition FromActivity="DeleteComparedRecords" ToActivity="SaveRecordAsUnConfirmed"/>
+	<Transition FromActivity="SaveRecordAsUnConfirmed" ToActivity="GetProductInfo2"/>
+	<Transition FromActivity="GetProductInfo2" ToActivity="CheckCyclicRelationship">	
+		<Rule>			
+			<Parameter name="Skip_Cyclic_Chk_Env_Name2" direction="in" eval="variable" type="string">Skip_Cyclic_Chk_Env_Name1</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">PROD</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+		                com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsIgnoringCase(Skip_Cyclic_Chk_Env_Name2, inputParamString); 
+
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="GetProductInfo2" ToActivity="ManageRecordCollection"/>
+	<Transition FromActivity="CheckCyclicRelationship" ToActivity="SendCICRejectForCyclicrelationship">
+		<Description>Check Cyclic Relationship</Description>
+		<Rule>
+			<Parameter direction="in" name="isCyclic" eval="variable" type="arraylist">hasCyclicRelationship</Parameter>
+			<Condition format="bsh">
+				<![CDATA[
+				result =  (isCyclic!=null && (isCyclic.contains("True") || isCyclic.contains("TRUE") || isCyclic.contains("true")));
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckCyclicRelationship" ToActivity="ManageRecordCollection"/>
+	<Transition FromActivity="ManageRecordCollection" ToActivity="EvaluateRuleBaseContains"/>
+	<Transition FromActivity="EvaluateRuleBaseContains" ToActivity="ConvertRecordsToOutputFormat1Sync"/>		
+
+	<Transition FromActivity="ConvertRecordsToOutputFormat1Sync" ToActivity="IdentifyProtocolOperationsForAccept"/>
+	<Transition FromActivity="IdentifyProtocolOperationsForAccept" ToActivity="HandleMessagingDataPoolsForAccept"/>
+	<Transition FromActivity="HandleMessagingDataPoolsForAccept" ToActivity="AcceptSent">
+		<Description>If no message was generated and the next command from handle messaging is DONE, then mark event done.</Description>
+		<Rule>
+			<Parameter direction="in" name="msgFound" eval="variable" type="boolean">msgGenerated</Parameter>
+			<Parameter direction="in" name="state" type="string" eval="variable">nextCmd</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Done</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCaseAndBooleanIsFalse(msgFound, state, inputParamString);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="HandleMessagingDataPoolsForAccept" ToActivity="HandleMessagingDataPoolsForAccept">
+		<Description>This transition should never be executed if the restart mechanism works correctly, putting this in to safeguard against false restarts by response handlers.</Description>
+		<Rule>
+			<Parameter direction="in" name="msgFound" eval="variable" type="boolean">msgGenerated</Parameter>
+			<Parameter direction="in" name="state" type="string" eval="variable">nextCmd</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">SUSPEND</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCaseAndBooleanIsFalse(msgFound, state, inputParamString);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="HandleMessagingDataPoolsForAccept" ToActivity="TranslateAcceptMessageFor1Sync"/>		
+	<Transition FromActivity="TranslateAcceptMessageFor1Sync" ToActivity="SendAcceptTo1Sync"/>		 
+	<Transition FromActivity="SendAcceptTo1Sync" ToActivity="CheckForMoreAcceptMessages"/>
+	<Transition FromActivity="CheckForMoreAcceptMessages" ToActivity="HandleMessagingDataPoolsForAccept">
+		<Description>If we are done, then move to Completion.</Description>
+		<Rule>
+			<Parameter direction="in" name="state" type="string" eval="variable">nextCmd</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Suspend</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsIgnoringCase(state, inputParamString);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="CheckForMoreAcceptMessages" ToActivity="AcceptSent"/>
+	
+	<Transition FromActivity="AcceptSent" ToActivity="ConversionWorkflow_MIX"/>
+
+	<!--Transition FromActivity="AcceptSent" ToActivity="ConversionWorkflow_MIX">
+		<Description>If the Conversion flag is GLENN</Description>
+		<Rule>
+			<Parameter name="ClassConversion" direction="in" eval="variable" type="string">ClassConversion1</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">MIX-1</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java">
+				<![CDATA[
+		                com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.equalsIgnoreCase(ClassConversion, inputParamString); 
+
+				]]>
+			</Condition>
+		</Rule>
+	</Transition-->
+	
+	<Transition FromActivity="ConversionWorkflow_MIX" ToActivity="RejectDueToWorkflowError">
+		<Description>If error in subflow</Description>
+		<Rule>
+			<Parameter name="errorFlag" type="boolean" eval="variable" direction="in">errorFlag</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="bsh">
+				<![CDATA[
+				result = (errorFlag!= null && errorFlag);
+				]]>
+			</Condition>
+		</Rule>
+	</Transition>
+	<Transition FromActivity="ConversionWorkflow_MIX" ToActivity="SetEventStatusToSuccess"/>
+	<Transition type="cancel" FromActivity="Any" ToActivity="AbortHandleMessagingDataPools"/>
+	<Transition type="error" FromActivity="Any" ToActivity="SetEventStatusToError"/>
+	<Transition FromActivity="SetEventStatusToError" ToActivity="RejectDueToWorkflowError"/>
+
+</Workflow>

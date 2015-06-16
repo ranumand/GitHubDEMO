@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<rulebase metaversion="0.1">
+	<name>Getallitemids</name>			
+	<description>Getallitemids</description>	
+	<declare usage="input">
+		<var>AllItemID_STR</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="output">
+		<var>AllItemID_Array</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="output">
+		<var>EnvironmentName</var>
+		<datatype type="string"/>
+	</declare>
+
+	<constraint>
+			<name>Getallitemids1</name>
+		<description>Getallitemids1</description>
+		<condition>
+			<defined>
+				<var>AllItemID_STR</var>
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>AllItemID_Array</var>
+				<op func="getAllItem">
+				<var>AllItemID_STR</var>
+				
+				</op>
+			</assign> 
+		</action>
+	</constraint>
+	
+	<constraint>
+		<name>EnvironmentName</name>
+		<description>Environment Name</description>
+		<action>
+			<assign>
+				<var>EnvironmentName</var>					
+					<op func="getEnviromentName">
+						<const type="string">ENVIORNMENT_NAME</const>						
+					</op>			
+			</assign>			
+		</action>
+	</constraint>
+
+	
+</rulebase>

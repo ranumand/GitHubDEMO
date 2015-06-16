@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will gets the highest hierarhcy Designation
+-->
+
+	<name>fetchRecordKeyForItemDelete</name>
+	<description>fetch record keys for all items</description>
+	<declare usage="input">
+		<var>delproductIDs</var>
+	</declare>
+	<declare usage="output">
+		<var>recKeyList</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="local">
+		<var>arrdelproductIDs</var>
+		<datatype type="array"/>
+	</declare>	
+	<constraint>
+		<name>getItemMasterProductid</name>
+		<description>getItemMasterProductid</description>
+		<usefor/>
+		<condition>
+			<defined>
+				<var>delproductIDs</var>
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>arrdelproductIDs</var>				
+				<op func="convertStringToArray">
+					<var>delproductIDs</var>
+					<const type="string">,</const>
+				</op>				
+			</assign>
+			<assign>
+				<var>isDeleteId</var>				
+				<op func="listContainsValue">
+					<var>arrdelproductIDs</var>
+					<var>PRODUCTID</var>
+				</op>				
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>fetRecordKey</name>
+		<description>fetch record key for current item</description>	
+		<condition>
+			<eq>
+				<var>isDeleteId</var>
+				<const type="string">true</const>				
+			</eq>
+		</condition>		
+		<action>
+			<assign>
+				<var>recKeyList</var>
+				<var>RECORD_KEYID</var>	
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

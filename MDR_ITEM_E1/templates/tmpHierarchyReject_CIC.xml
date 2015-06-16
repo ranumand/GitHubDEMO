@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Message externalControlNumber="2004-05-30 14:47:35-08:00" language="en" messageType="Production" mlxmlVersion="2.6" protocol="mlXML" timestamp="1085953656234">
+	<Header/>
+	<Body>
+		<Document subtype="ClassCutOverHierarchyReject" type="CatEdit">
+			<BusinessDocument>
+				<CatalogAction>
+					<CatalogActionHeader>
+						<MasterCatalog>
+							<RevisionID>
+								<BaseName>TEST</BaseName>
+								<Version>1</Version>
+								<DBID>1</DBID>
+							</RevisionID>
+						</MasterCatalog>						
+						<CatalogReference type="MasterCatalog">
+							<RevisionID>
+								<BaseName>TEST</BaseName>
+								<Version>1</Version>
+								<DBID>1</DBID>
+							</RevisionID>
+							<Extension name="SplitImportBatch">
+								<Value>No</Value>
+							</Extension>
+						</CatalogReference>
+						<Extension name="SendForCorrection">
+							<Value>No</Value>
+						</Extension>
+						<Extension name="HierarchyRejectCICIM">
+							<Value>TEST</Value>
+						</Extension>
+						<PackageData messageID=""/>
+						<CatalogActionHeaderAck>
+							<AcknowledgmentCode>
+								<Code>
+									<CodeType>AcknowledgmentCode</CodeType>
+									<Value/>
+									<Normal/>
+								</Code>
+							</AcknowledgmentCode>
+							<Owner>
+								<PartyID>
+									<PartyName/>
+									<DBID/>
+								</PartyID>
+							</Owner>
+							<Workitem>
+								<DBID/>
+							</Workitem>
+							<Instructions>
+								<Code>
+									<CodeType>InstructionType</CodeType>
+									<Value/>
+									<Normal>ReasonCode</Normal>
+								</Code>
+								<Description>
+									<Short/>
+									<Long/>
+								</Description>
+							</Instructions>
+						</CatalogActionHeaderAck>
+					</CatalogActionHeader>
+					<CatalogActionDetails/>
+				</CatalogAction>
+			</BusinessDocument>
+			<OriginalDocument/>
+		</Document>
+	</Body>
+</Message>

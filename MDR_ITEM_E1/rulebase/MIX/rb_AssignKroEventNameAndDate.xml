@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+	<name>AssignKrogerEventDateAndName</name>
+	<description>Auto Assign attributes based on Vendor Input</description>
+
+	<declare>
+		<var>EVENT_LKP_MC</var>
+		<link type="catalog">
+			<literal>EVENT_LKP</literal>
+		</link>
+	</declare> 
+
+	<constraint>
+		<name>AssignTempEventDateAndName</name>			
+		<description>This constraint will assign temp Event Publication Date n Kroger Event Name</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<var>RECORD_IS_ROOT</var>
+			</and>
+		</condition>
+		<action>
+			<slice>
+				<var>EVENTPUBLISHDATE_TEMP</var>
+				<var>EVENT_NAME_TEMP</var>
+				<table source="sql" distinct="true">
+					<literal>EVENT_LKP_MC/PUBLICATION_DT</literal>
+					<literal>EVENT_LKP_MC/EVENT_NME</literal>
+					<where>
+						<sql>
+							<eq>
+								<literal>EVENT_LKP_MC/PRODUCTID</literal>
+								<var>EVENT_CD</var>
+							</eq>
+						</sql>
+					</where>
+				</table>
+			</slice>
+		</action>
+	</constraint>
+
+	<constraint>
+		<name>AssignEventDateAndName</name>			
+		<description>This constraint will assign Event Publication Date n Kroger Event Name</description>
+		<condition>
+			<and>
+				<var>RECORD_IS_ROOT</var>
+				<or>
+					<defined>EVENTPUBLISHDATE_TEMP</defined>
+					<defined>EVENT_NAME_TEMP</defined>
+				</or>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>EVENTPUBLISHDATE</var>
+				<var>EVENTPUBLISHDATE_TEMP</var>
+			</assign>
+			<assign>
+				<var>EVENT_NAME</var>
+				<var>EVENT_NAME_TEMP</var>
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

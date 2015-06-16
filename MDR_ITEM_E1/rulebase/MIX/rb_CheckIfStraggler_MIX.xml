@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+	<name>rb_CheckIfStraggler_MIX</name>
+	<description>rb_CheckIfStraggler_MIX</description>
+	<declare usage="output">
+		<var>Is_Straggler</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="local">
+		<var>status_cd</var>
+		<datatype type="string"/>
+	</declare>
+	<declare>
+		<var>HR_MC</var>
+		<link type = "catalog">
+			<literal>HierarchyRoles</literal>
+			<literal>STATE/CONFIRMED</literal>
+		</link>
+	</declare>
+	<constraint>
+		<name>CheckIfStraggler</name>
+		<description>This rule will check weather </description>
+		<condition>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+		</condition>
+		<action>
+			<assign>
+				<var>status_cd</var>
+				<table source="SQL">
+					<literal>HR_MC/ITEM_HIERARCHY_STATUS_CD</literal>
+					<where>
+						<sql>
+							<eq>
+								<literal>HR_MC/PRODUCTID</literal>
+								<var>PRODUCTID</var>
+							</eq>			
+						</sql>
+					</where>
+				</table>
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>AssignFlagIfStraggler</name>
+		<description>This rule will assign flag</description>
+		<condition>
+			<and>
+				<defined>
+					<var>status_cd</var>
+				</defined>
+				<eq>
+					<var>status_cd</var>
+					<const type="string">INPROCESS_STRAGGLER</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>Is_Straggler</var>
+				<const type="string">TRUE</const>
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

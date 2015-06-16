@@ -1,0 +1,292 @@
+<rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+    <name>rb_mix_GetVenusResonse</name>
+    <description lang="en">rb_mix_GetVenusResonse</description>
+    <declare usage="output">
+        <var>Venus_Status</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>VENUS_REASON</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>EVENT_NAME</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>RESPONSE_ARRAY</var>
+        <datatype type="array"/>
+    </declare>
+    <declare usage="output">
+        <var>VENUS_VALUE</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>TEMP_PRODUCT_string</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="local">
+        <var>onesync</var>
+        <link type="datasource">
+            <literal>ONESYNCHVALIDVALUES</literal>
+        </link>
+    </declare>
+    <constraint>
+        <name>GetPublishedGTIN</name>
+        <description>GetPublishedGTIN</description>
+        <usefor/>
+        <condition>
+            <eq>
+                <var>CATALOG_NAME</var>
+                <const type="string">HIERARCHYROLES</const>
+            </eq>
+        </condition>
+        <action>
+            <assign>
+                <var>TEMP_PRODUCT_string</var>
+                <var>PRODUCTID</var>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>GetVENUS_RESPONSE_VALID_VALUE</name>
+        <description>GetPublishedGTIN</description>
+        <usefor/>
+        <condition>
+            <defined>
+                <var>VENUS_CHANGE_STATUS_CD</var>
+            </defined>
+        </condition>
+        <action>
+            <assign>
+                <var>VENUS_VALUE</var>
+                <table source="sql">
+                    <literal>onesync/Value</literal>
+                    <where type="SQL">
+                        <sql>
+                            <and>
+                                <eq>
+                                    <literal>onesync/Code</literal>
+                                    <var>VENUS_CHANGE_STATUS_CD</var>
+                                </eq>
+                                <eq>
+                                    <literal>onesync/MDM_ATTRIBUTE_NAME</literal>
+                                    <const type="string">VENUS_CHANGE_STATUS_CD</const>
+                                </eq>
+                            </and>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>ConvertString2Array</name>
+        <description>ConvertString2Array</description>
+        <usefor/>
+        <condition>
+            <defined>
+                <var>VENUS_REASON_CD</var>
+            </defined>
+        </condition>
+        <action>
+            <assign>
+                <var>RESPONSE_ARRAY</var>
+                <op func="convertStringToArray"> <var>VENUS_REASON_CD</var>
+                    <const type="string">|</const>
+                </op>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>GetAdditionalDescription</name>
+        <description>Get Additional Description</description>
+        <usefor/>
+        <action>
+            <assign>
+                <var>VENUS_REASON</var>
+                <op func="concat"> <var>VENUS_VALUE</var>
+                    <const type="string">|</const>
+                    <op func="getIndexValue"> <const type="string">1</const>
+                        <var>RESPONSE_ARRAY</var>
+                    </op>
+                    <const type="string">|</const>
+                    <op func="getIndexValue"> <const type="string">2</const>
+                        <var>RESPONSE_ARRAY</var>
+                    </op>
+                </op>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>PID_COMPLETE_CONFIRM</name>
+        <description>GetVenusStatus</description>
+        <usefor/>
+        <condition>
+            <and>
+                <and>
+                    <eq>
+                        <var>CATALOG_NAME</var>
+                        <const type="string">HIERARCHYROLES</const>
+                    </eq>
+                    <changed>
+                        <var>ITEM_HIERARCHY_STATUS_CD</var>
+                        <const type="string">PREVIOUS_VERSION</const>
+                    </changed>
+                </and>
+                <or>
+                    <eq>
+                        <var>ITEM_HIERARCHY_STATUS_CD</var>
+                        <const type="string">PID_COMPLETE</const>
+                    </eq>
+                    <eq>
+                        <var>ITEM_HIERARCHY_STATUS_CD</var>
+                        <const type="string">PID PROCESSED/SETUP</const>
+                    </eq>
+                </or>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var>Venus_Status</var>
+                <const type="string">CONFIRM</const>
+            </assign>
+            <assign>
+                <var>EVENT_NAME</var>
+                <const type="string">MIX Hierarchy Roles Update Sync(Parent)</const>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>VIP_REVIEW</name>
+        <description>con8</description>
+        <usefor/>
+        <condition>
+            <and>
+                <and>
+                    <and>
+                        <eq>
+                            <var>CATALOG_NAME</var>
+                            <const type="string">HIERARCHYROLES</const>
+                        </eq>
+                        <or>
+                            <changed>
+                                <var>ITEM_HIERARCHY_STATUS_CD</var>
+                                <const type="string">PREVIOUS_VERSION</const>
+                            </changed>
+                            <changed>
+                                <var>VENUS_CHANGE_STATUS_CD</var>
+                                <const type="string">PREVIOUS_VERSION</const>
+                            </changed>
+                        </or>
+                    </and>
+                    <or>
+                        <eq>
+                            <var>ITEM_HIERARCHY_STATUS_CD</var>
+                            <const type="string">REJECTED</const>
+                        </eq>
+                        <eq>
+                            <var>ITEM_HIERARCHY_STATUS_CD</var>
+                            <const type="string">CM_REJECTED</const>
+                        </eq>
+                    </or>
+                </and>
+                <op func="listContainsValue"> <var>VENUS_CHANGE_STATUS_CD</var>
+                    <const type="string">12</const>
+                    <const type="string">19</const>
+                    <const type="string">22</const>
+                    <const type="string">16</const>
+                    <const type="string">20</const>
+                    <const type="string">21</const>
+                    <const type="string">25</const>
+                    <const type="string">24</const>
+                    <const type="string">27</const>
+                    <const type="string">28</const>
+                    <const type="string">29</const>
+                    <const type="string">30</const>
+                    <const type="string">31</const>
+                    <const type="string">32</const>
+                    <const type="string">33</const>
+                    <const type="string">34</const>
+                    <const type="string">35</const>
+                    <const type="string">36</const>
+                    <const type="string">2</const>
+                </op>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var>Venus_Status</var>
+                <const type="string">REVIEW</const>
+            </assign>
+            <assign>
+                <var>EVENT_NAME</var>
+                <const type="string">MIX Hierarchy Roles Update Review(Parent)</const>
+            </assign>
+        </action>
+    </constraint>
+    <constraint>
+        <name>VIP_REJECT</name>
+        <description>con8</description>
+        <usefor/>
+        <condition>
+            <and>
+                <and>
+                    <and>
+                        <eq>
+                            <var>CATALOG_NAME</var>
+                            <const type="string">HIERARCHYROLES</const>
+                        </eq>
+                        <or>
+                            <changed>
+                                <var>ITEM_HIERARCHY_STATUS_CD</var>
+                                <const type="string">PREVIOUS_VERSION</const>
+                            </changed>
+                            <changed>
+                                <var>VENUS_CHANGE_STATUS_CD</var>
+                                <const type="string">PREVIOUS_VERSION</const>
+                            </changed>
+                        </or>
+                    </and>
+                    <or>
+                        <eq>
+                            <var>ITEM_HIERARCHY_STATUS_CD</var>
+                            <const type="string">REJECTED</const>
+                        </eq>
+                        <eq>
+                            <var>ITEM_HIERARCHY_STATUS_CD</var>
+                            <const type="string">CM_REJECTED</const>
+                        </eq>
+                    </or>
+                </and>
+                <op func="listContainsValue"> <var>VENUS_CHANGE_STATUS_CD</var>
+                    <const type="string">18</const>
+                    <const type="string">15</const>
+                    <const type="string">1</const>
+                    <const type="string">17</const>
+                    <const type="string">6</const>
+                    <const type="string">11</const>
+                    <const type="string">10</const>
+                    <const type="string">13</const>
+                    <const type="string">7</const>
+                    <const type="string">9</const>
+                    <const type="string">5</const>
+                    <const type="string">26</const>
+                    <const type="string">3</const>
+                    <const type="string">4</const>
+                    <const type="string">14</const>
+                </op>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var>Venus_Status</var>
+                <const type="string">REJECT</const>
+            </assign>
+            <assign>
+                <var>EVENT_NAME</var>
+                <const type="string">MIX Hierarchy Roles Update Reject(Parent)</const>
+            </assign>
+        </action>
+    </constraint>
+</rulebase>

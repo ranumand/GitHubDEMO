@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will gets the highest hierarhcy Designation-->
+	<name>fetchHighestHierarchyDesignation</name>
+	<description>Get highest hierarhcy Designation</description>
+	<declare usage="input">
+		<var>OrganizationId</var>
+		<datatype type="string"/>
+	</declare>
+	<declare usage="input">
+		<var>inboundRecordList</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="output">
+		<var>deltedRecList</var>
+		<datatype type="array"/>
+	</declare>
+	<declare>
+		<var>CONTAINS_RECORDS</var>
+		<link type="relationship_record">
+			<literal>Contains</literal>
+		</link>
+	</declare>
+	<declare>
+		<var>CONTAINED_BY_RECORDS</var>
+		<link type="relationship_record">
+			<literal>ContainedBy</literal>
+		</link>
+	</declare>
+	<declare>
+		<var>MULTI_CONTAINED_BY_RECORDS</var>
+		<link type="multi_relationship_record">
+			<literal>ContainedBy</literal>
+			<literal>ContainedBy</literal>
+		</link>
+	</declare>
+	<declare>
+		<var>fwEligibleForDelete</var>
+		<datatype type="boolean"/>
+	</declare>
+	<declare>
+		<var>isContainedByItemPublishGTIN</var>
+		<datatype type="boolean"/>
+	</declare>
+	<declare>
+		<var>reEligibleForDelete</var>
+		<datatype type="boolean"/>
+	</declare>
+	<declare>
+		<var>listofChildGTINfronLINK</var>
+		<datatype type="array"/>
+	</declare>
+	<declare>
+		<var>checkcontainsandcontainedby</var>
+		<datatype type="boolean"/>
+	</declare>
+	<declare>
+		<var>CurrentGTINHinfoID</var>
+		<datatype type="string"/>
+	</declare>
+	<declare>
+		<var>ParentGTINHinfoID</var>
+		<datatype type="string"/>
+	</declare>
+	<declare>
+		<var>cat_link</var>
+		<link type="catalog">
+			<literal>link_mvl</literal>
+			<literal>STATE/UNCONFIRMED</literal>
+		</link>
+	</declare>
+	<declare>
+		<var>cat_HierarchyInfo</var>
+		<link type="catalog">
+			<literal>HierarchyInformation</literal>
+			<literal>STATE/UNCONFIRMED</literal>
+		</link>
+	</declare> 
+	<!-- check if Current GITN is Publish GTIN or not -->
+	<constraint>
+		<name>isCurrentGTINisPublishGTIN</name>			
+		<description>isCurrentGTINisPublishGTIN</description>
+		<condition>
+			<eq>
+				<var>CATALOG_NAME</var>
+				<const type="string">ITEM_MASTER</const>
+			</eq>
+		</condition>
+		<action>
+			<assign>
+				<var>CurrentGTINHinfoID</var>				
+				<table source="sql" distinct="true">
+					<literal>cat_HierarchyInfo/PRODUCTID</literal>
+					<where>
+						<sql>
+							<eq>
+								<literal>cat_HierarchyInfo/PRODUCTID</literal>
+								<var>PRODUCTID</var>
+							</eq>
+						</sql>
+					</where>
+				</table>
+			</assign>
+			<assign>
+				<var>listofChildGTINfronLINK</var>				
+				<table source="sql" distinct="true">
+					<literal>cat_link/CHILDITEM_GTIN</literal>
+					<where>
+						<sql>
+							<eq>
+								<literal>cat_link/PRODUCTID</literal>
+								<var>PRODUCTID</var>
+							</eq>
+						</sql>
+					</where>
+				</table>
+			</assign>
+		</action>
+	</constraint>
+	<!-- check if parent GTIN of Current GITN is Publish GTIN or not -->
+	<constraint>
+		<name>isParentGTINisPublishGTIN</name>			
+		<description>isParentGTINisPublishGTIN</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>CONTAINED_BY_RECORDS</var>
+				</defined>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>ParentGTINHinfoID</var>				
+				<table source="sql" distinct="true">
+					<literal>cat_HierarchyInfo/PRODUCTID</literal>
+					<where>
+						<sql>
+							<in>
+								<literal>cat_HierarchyInfo/PRODUCTID</literal>
+								<var>CONTAINED_BY_RECORDS/PRODUCTID</var>
+							</in>
+						</sql>
+					</where>
+				</table>
+			</assign>
+		</action>
+	</constraint>
+	<!--  check if Current GTIN is Contains in inboundRecordList Input Variable -->
+	<constraint>
+		<name>checkifCurrentGTINisContainsininboundRecordListInputVariable</name>
+		<description>check if Current GTIN is Contains in inboundRecordList Input Variable</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>				
+				<in>
+					<var>PRODUCTID</var>
+					<var>inboundRecordList</var>	
+				</in>
+				<or>
+					<undefined>
+						<var>listofChildGTINfronLINK</var>
+					</undefined>
+					<and>
+						<defined>
+							<var>listofChildGTINfronLINK</var>
+						</defined>
+						<eq>
+							<op func="isSubSetArray">
+								<var>listofChildGTINfronLINK</var>
+								<var>inboundRecordList</var>							
+							</op>
+							<const type="boolean">TRUE</const>
+						</eq>
+					</and>
+				</or>				
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>isContainedByItemPublishGTIN</var>
+				<const type="boolean">TRUE</const>
+			</assign>			
+		</action>
+		<action>
+			<assign>
+				<var>isContainedByItemPublishGTIN</var>
+				<const type="boolean">FALSE</const>
+			</assign>			
+		</action>
+	</constraint>	
+	<!--  check if Current GTIN is not Containsby another GTIN -->
+	<constraint>
+		<name>checkifCurrentGTINisnotContainsbyanotherGTIN</name>
+		<description>check if Current GTIN is not Containsby another GTIN</description>
+		<condition>
+			<or>
+				<and>
+					<eq>
+						<var>isContainedByItemPublishGTIN</var>
+						<const type="boolean">TRUE</const>
+					</eq>
+					<undefined>
+						<var>CONTAINED_BY_RECORDS</var>
+					</undefined>							
+				</and>
+				<and>
+					<eq>
+						<var>isContainedByItemPublishGTIN</var>
+						<const type="boolean">TRUE</const>
+					</eq>
+					<defined>
+						<var>CONTAINED_BY_RECORDS</var>
+					</defined>							
+					<eq>
+						<const type="string">REJECTED</const>	
+						<op func="fetchRecordState">
+							<var>PRODUCTID</var>
+							<const type="string">ITEM_MASTER</const>
+							<var>OrganizationId</var>					
+						</op>
+					</eq>
+				</and>
+			</or>
+		</condition>
+		<action>
+			<assign>
+				<var>checkcontainsandcontainedby</var>
+				<const type="boolean">TRUE</const>
+			</assign>
+		</action>
+	</constraint>
+	<!-- check if Current GTIN is Containsby another GTIN  -->
+	<constraint>
+		<name>checkifCurrentGTINisContainsbyOtherGTIN</name>
+		<description>check if Current GTIN is Containsby Other GTIN</description>
+		<condition>
+			<and>
+				<undefined>
+					<var>checkcontainsandcontainedby</var>
+				</undefined>
+				<eq>
+					<var>isContainedByItemPublishGTIN</var>
+					<const type="boolean">TRUE</const>
+				</eq>
+				<defined>
+					<var>CONTAINED_BY_RECORDS</var>
+				</defined>
+				<undefined>
+					<var>CurrentGTINHinfoID</var>
+				</undefined>
+				<or>
+					<undefined>
+						<var>ParentGTINHinfoID</var>
+					</undefined>
+					<and>
+						<defined>
+							<var>ParentGTINHinfoID</var>
+						</defined>
+						<undefined>
+							<var>MULTI_CONTAINED_BY_RECORDS</var>
+						</undefined>
+					</and>
+				</or>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>checkcontainsandcontainedby</var>
+				<const type="boolean">TRUE</const>
+			</assign>
+		</action>		
+	</constraint>
+
+	<constraint>
+		<name>checkCurrentGTINContainsgtinandContainedByGTINexistsininboundRecordList</name>
+		<description>check Current GTIN Contains gtin and Contained By GTIN exists in ininboundRecordList</description>
+		<condition>			
+			<eq>
+				<var>checkcontainsandcontainedby</var>
+				<const type="boolean">TRUE</const>
+			</eq>
+		</condition>
+		<action>
+			<assign>
+				<var>fwEligibleForDelete</var>
+				<op func="firstListContainsSec">
+					<var>inboundRecordList</var>	
+					<var>CONTAINS_RECORDS/PRODUCTID</var>
+				</op>
+			</assign>
+			<assign>
+				<var>reEligibleForDelete</var>
+				<op func="firstListContainsSec">
+					<var>inboundRecordList</var>	
+					<var>CONTAINED_BY_RECORDS/PRODUCTID</var>
+				</op>
+			</assign>
+			<assign>
+				<var>reEligibleForDelete_parent</var>
+				<op func="firstListContainsSec">
+					<var>inboundRecordList</var>	
+					<var>MULTI_CONTAINED_BY_RECORDS/PRODUCTID</var>
+				</op>
+			</assign>		
+		</action>
+	</constraint>
+	<!--if Current GTIN contains All GTIN and ContainBy All GTIN is come for intput then set output parameter varibale  deltedRecList value -->
+	<constraint>
+		<name>setdeltedRecListValue</name>
+		<description>set deltedRecList Value</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<var>fwEligibleForDelete</var>
+				<var>reEligibleForDelete</var>
+				<var>reEligibleForDelete_parent</var>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>deltedRecList</var>
+				<var>PRODUCTID</var>	
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

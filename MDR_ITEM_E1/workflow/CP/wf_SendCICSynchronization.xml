@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow Version="1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<Owner>TIBCO</Owner>
+<Name>wf_SendCICSynchronization</Name>
+<Description>Process to publish CIC Synchronization message</Description>
+<Parameter name="inDoc" direction="in" type="document" eval="variable">inDoc</Parameter>
+<Parameter direction="out" name="errorFlag" type="boolean" eval="variable">errorFlag</Parameter>
+<Context>Sender</Context>
+
+<!--Start of Activities-->
+
+	<Activity Name="StartSyncProcess">
+		<Start/>
+		<Action>NoOperation</Action>
+		<Description>Start applying new rule changes</Description>
+		<Execution>SYNCHR</Execution>		
+	</Activity>
+	
+	<Activity Name="CutoverSync">		
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Update event for Class Promotion Synchronization</Description>
+		<Parameter direction="in" name="eventDescriptor" type="string" eval="constant">Class_CutOver_Sync</Parameter>
+	</Activity>
+	
+	<Activity Name="ApplySubset">
+		<Action>EvaluateSubset</Action>
+		<Description lang="en">Apply subset</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">SUBSET</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="MasterCatalog" type="string" eval="xpath" source="//CatalogActionHeader/CatalogReference[@type='MasterCatalog']/RevisionID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="RelationshipName" type="string" eval="constant">Contains</Parameter>
+		<Parameter direction="in" name="Subset" type="string" eval="constant">PUBLISHED_GTIN</Parameter>
+		<Parameter direction="in" name="VersionOption" type="string" eval="catalog" source="VersionOption">inDoc</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+	</Activity>	
+
+	<Activity Name="IdentifyProtocolOperationsForCICSync">
+		<Action>IdentifyProtocolOperations</Action>
+		<Description lang="en">Identify operations to be performed for each record</Description>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">pl1</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter direction="in" name="SYNCHRONISE_FLAG" type="string" eval="constant">TRUE</Parameter>
+		<Parameter direction="in" name="DATAPOOL_ID" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Channel']/Organization/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="in" name="BUYER_ID" type="string" eval="xpath" source="/Message/Header/MessageHeader[@role='Retailer']/Organization/PartyID/DBID/text()">inDoc</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="AsyncStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">IDENTIFYOPERATION</Parameter>
+	</Activity>	
+	
+	<Activity Name="HandleProtocolMessageForCICSync">
+		<Action>HandleProtocolMessaging</Action>
+		<Description lang="en">Begin sending accept message</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CREATEMESSAGE</Parameter>
+		<Parameter direction="in" name="CommandsPerMessage" type="long" eval="constant">500</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="ResponseRequired" type="boolean" eval="constant">false</Parameter>
+		<Parameter direction="in" name="ProtocolMessagingCommand" type="string" eval="variable">nextCmd</Parameter>
+		<Parameter direction="in" name="ProtocolMessagingCommand" type="string" eval="constant">START</Parameter>	
+		<Parameter direction="in" name="ReferenceStepID" eval="variable" type="long">prlog2</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutDocument" type="document" eval="variable">messageDoc</Parameter>
+		<Parameter direction="out" name="ProtocolMessagingNextCommand" type="string" eval="variable">nextCmd</Parameter>
+		<Parameter direction="out" name="ProtocolMessageGenerated" type="boolean" eval="variable">msgGenerated</Parameter>
+	</Activity>	
+	
+	<Activity Name="ConvertRecordsToOutputFormatForCICSync">
+		<Action>ConvertRecordToOutput</Action>
+		<Description lang="en">Convert records to output format</Description>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">CONVERTTOOUTPUT</Parameter>
+		<Parameter direction="in" name="InDocument" type="document" eval="variable">inDoc</Parameter>
+		<Parameter direction="in" name="InRecordList" type="recordlist" eval="variable">workRecordListNew</Parameter>
+		<Parameter direction="in" name="CatalogOutputMap" type="string" eval="constant">ITEM_MASTER_1SYNC_OM</Parameter>
+		<Parameter direction="out" name="OutRecordList" type="recordlist" eval="variable">workRecordList</Parameter>
+		<Parameter direction="out" name="OutRecordList2" type="recordlist" eval="variable">mcRecordList</Parameter>
+		<Parameter direction="out" name="StepID" eval="variable" type="long">pl1</Parameter>
+	</Activity>
+	
+	<Activity Name="SendMessageToBW">
+		<Action>SendProtocolMessage</Action>
+		<Description>Publish the message document to BW to send CIC sync messages</Description>
+		<Execution>ASYNCHR</Execution>
+		<Parameter name="BizProtocol" direction="in" eval="constant" type="string">JMS</Parameter>
+		<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">OUTBOUND_CP_SYNC_MSG</Parameter>
+		<Parameter name="InDocument" direction="in" type="document" eval="variable">messageDoc</Parameter>
+		<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+		<Parameter name="SenderCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text())[last()]">workDoc</Parameter>
+		<Parameter name="ChannelCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text())[last()]">workDoc</Parameter>
+		<Parameter name="TradingPartnerCredential" direction="in" type="string" eval="xpath" source="(/Message/Header/MessageHeader[@role='Retailer']/Credential[@domain='GLN']/Identity/text())[last()]">workDoc</Parameter>
+		<Parameter name="OutDocument" direction="out" eval="variable" type="document">responseDoc</Parameter>
+		<Parameter name="eventState" direction="in" type="string" eval="constant">SENDMESSAGE</Parameter>
+		<Parameter direction="in" name="MessageID" type="string" eval="constant">TEST2</Parameter>
+		<Parameter direction="in" name="MessageID1" type="string" eval="constant">TEST21</Parameter>
+		<Parameter direction="in" name="ConversationKey" type="string" eval="constant">TEST21</Parameter>
+	</Activity>
+	<Activity Name="SetStatusToError">
+		<Action>UpdateEvent</Action>
+		<Description lang="en">Set the event state to Error/Done</Description>
+		<Parameter direction="in" name="eventStatus" type="string" eval="constant">ERROR</Parameter>
+		<Parameter direction="in" type="string" eval="constant" name="eventState">DONE</Parameter>
+		<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+	</Activity>
+	<Activity Name="CICSyncCompleted">
+		<Action>NoOperation</Action>
+		<Description lang="en">CIC Sync is completed</Description>
+	</Activity>
+	
+<!-- End Of Activities -->
+	
+<!-- Start of Transitions -->
+	
+	<Transition FromActivity="StartSyncProcess" ToActivity="CutoverSync"/>
+	<Transition FromActivity="CutoverSync" ToActivity="ApplySubset"/>
+	<Transition FromActivity="ApplySubset" ToActivity="ConvertRecordsToOutputFormatForCICSync"/>
+	<Transition FromActivity="ConvertRecordsToOutputFormatForCICSync" ToActivity="IdentifyProtocolOperationsForCICSync"/>
+	<Transition FromActivity="IdentifyProtocolOperationsForCICSync" ToActivity="HandleProtocolMessageForCICSync"/>
+	
+	<Transition FromActivity="HandleProtocolMessageForCICSync" ToActivity="SendMessageToBW"/>
+	
+	<Transition FromActivity="SendMessageToBW" ToActivity="HandleProtocolMessageForCICSync">
+		<Description>If we are not done, then generate message doc for next set to records.</Description>
+		<Rule>
+			<Parameter direction="in" name="state" type="string" eval="variable">nextCmd</Parameter>
+			<Parameter direction="in" name="inputParamString" eval="constant" type="string">Done</Parameter>
+			<Parameter name="result" type="boolean" direction="out"/>
+			<Condition format="java"><![CDATA[
+				com.tibco.mdm.workflow.engine.transition.WfSharedConditionTransition.doesNotEqualsIgnoringCase(state, inputParamString);
+            ]]></Condition>
+		</Rule>
+	</Transition>
+	
+	<Transition FromActivity="SendMessageToBW" ToActivity="CICSyncCompleted"/>
+	<Transition type = "error" FromActivity="Any" ToActivity="SetStatusToError"/>
+	
+<!-- End of Transitions -->	
+
+</Workflow>

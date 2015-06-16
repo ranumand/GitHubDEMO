@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rulebase metaversion="1.0">
+	<name>checkCyclicRelationship</name>
+	<description>Rulebase to find cyclic relationship</description>
+
+
+	<constraint>
+			<name>checkIsCyclicRelationship</name>
+			<description>Check if CyclicRelationship</description>
+			<condition>
+					 <and>
+							 <eq>
+									 <var>CATALOG_NAME</var>
+									 <const type="string">ITEM_MASTER</const>
+							 </eq>
+					 </and>
+			</condition>
+			<action>
+					 <assign>
+							 <var>hasCyclicRelationship</var>
+							 <op func="checkIsCyclicRelationship">
+									 <var>RECORD_KEYID</var>
+									 <var>RECORD_VERSION</var>
+									 <const type="string">RulebaseCustomFunctionHelper</const>
+									 <var>SESSION/ENTERPRISE_INTERNAL_NAME</var>
+							 </op>
+					 </assign>
+			</action>
+	</constraint>
+</rulebase>

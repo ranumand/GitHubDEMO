@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	Create Array for Create Link_MVL Records
+	Created BY : Malvika Mistry	
+-->
+<rulebase metaversion="1.0">
+	<name>rb_CreateArrayForSaveRecord</name>
+	<description>Workflow rulebase validations</description>
+	<declare usage="input">
+		<var>hiProductIds</var>
+	</declare>
+	<declare usage="input">
+		<var>iHierarchyGTIN</var>
+	</declare>
+	<declare usage="input">
+		<var>iGTIN</var>
+	</declare>
+
+	<declare usage="input">
+		<var>iProductIds</var>
+	</declare>
+	<declare usage="input">
+		<var>iProductExtns</var>
+	</declare>
+	<declare usage="input">
+		<var>iPARENTITEM_GTIN</var>
+	</declare>
+	<declare usage="input">
+		<var>iCHILDITEM_GTIN</var>
+	</declare>
+	<declare usage="input">
+		<var>iCHILDITEM_QUANTITY</var>
+	</declare>
+
+	<declare usage="output">
+		<var>oProductIds</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="output">
+		<var>oProductExtns</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="output">
+		<var>oATTRIBUTE_PARENTITEM_GTIN</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="output">
+		<var>oATTRIBUTE_CHILDITEM_GTIN</var>
+		<datatype type="array"/>
+	</declare>
+	<declare usage="output">
+		<var>oATTRIBUTE_CHILDITEM_QUANTITY</var>
+		<datatype type="array"/>
+	</declare>
+
+
+
+
+	<constraint>
+		<name>CreateRecordsForLinkMVL</name>
+		<description>Create Records For Link_Mvl</description>		
+		<condition>
+			<defined>
+				<var>iProductIds</var>
+			</defined>
+		</condition>			
+		<action>
+			<assign>
+				<var>oProductIds</var>
+				<op func="convertStringToArray">
+					<var>iProductIds</var>
+					<const type="string">,</const>
+				</op>				
+			</assign>
+
+			<assign>
+				<var>oProductExtns</var>
+				<op func="convertStringToArray">
+					<var>iProductExtns</var>
+					<const type="string">,</const>
+				</op>
+			</assign>
+			<assign>
+				<var>oATTRIBUTE_PARENTITEM_GTIN</var>
+				<op func="convertStringToArray">
+					<var>iPARENTITEM_GTIN</var>
+					<const type="string">,</const>
+				</op>				
+			</assign>
+
+			<assign>
+				<var>oATTRIBUTE_CHILDITEM_GTIN</var>
+				<op func="convertStringToArray">
+					<var>iCHILDITEM_GTIN</var>
+					<const type="string">,</const>
+				</op>
+			</assign>
+
+			<assign>
+				<var>oATTRIBUTE_CHILDITEM_QUANTITY</var>
+				<op func="convertStringToArray">
+					<var>iCHILDITEM_QUANTITY</var>
+					<const type="string">,</const>
+				</op>
+			</assign>
+		</action>
+		<action>
+			<assign>
+				<var>oProductIds</var>
+				<var>iHierarchyGTIN</var>
+			</assign>
+
+			<assign>
+				<var>oProductExtns</var>
+				<op func="concat">
+					<var>iGTIN</var>
+					<const type="string">-</const>
+					<var>iGTIN</var>
+				</op>				
+			</assign>
+			<assign>
+				<var>oATTRIBUTE_PARENTITEM_GTIN</var>
+				<var>iGTIN</var>
+			</assign>
+
+			<assign>
+				<var>oATTRIBUTE_CHILDITEM_GTIN</var>
+				<var>iGTIN</var>
+			</assign>
+
+			<assign>
+				<var>oATTRIBUTE_CHILDITEM_QUANTITY</var>
+				<const type="string">1</const>
+			</assign>
+			
+			
+		</action>
+	</constraint>
+
+
+
+</rulebase> 		

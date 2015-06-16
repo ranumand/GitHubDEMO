@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rulebase metaversion="1.0">
+	<name>Rb_SetStatusToReview</name>
+	<description>Change ITEM_MASTER Catalog attribute STATUS_CD to Review</description>
+	
+	<declare usage="input">
+	    <var>recKeyList1</var>
+	    <datatype type="array"/>
+	</declare>
+	<declare usage="output">
+	    <var>recKeyList2</var>
+	    <datatype type="array"/>
+	</declare>
+	
+	<constraint>
+
+		<name>SetStatusReview</name>
+
+		<description>Change ITEM_MASTER Catalog attribute STATUS_CD to REVIEW</description>              
+
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type = "string">ITEM_MASTER</const>
+				</eq>						
+			</and>
+		</condition>
+
+		<action>						
+			<assign>
+				<var>STATUS_CD</var>
+				<const type="string">REVIEW</const>
+			</assign>
+			<assign>
+				<var>recKeyList2</var>
+				<var>recKeyList1</var>
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

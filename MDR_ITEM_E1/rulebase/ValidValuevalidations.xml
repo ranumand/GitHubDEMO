@@ -1,0 +1,1037 @@
+<?xml version="1.0"?>
+<rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+	<name>ValidValuevalidations</name>
+	<description lang="en">ValidValuevalidations</description>
+	<execution_directive first_pass="skip"/>
+
+	<!-- Item Data Origin -->
+	<constraint>
+		<name>Item Data Origin Validation</name>
+		<description>A constraint to validate ITEM_DATA_SOURCE_NME ValidValue</description>		
+		<usefor>
+			<var>ITEM_DATA_SOURCE_NME</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>ITEM_DATA_SOURCE_NME</var>
+				</defined>
+				<defined>
+					<var>PUBLISHED_GTIN_FLG</var>
+				</defined>
+				<eq>
+					<var>PUBLISHED_GTIN_FLG</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>ITEM_DATA_SOURCE_NME</var>
+					<const type="string">GDSN</const>
+					<const type="string">NON-GDSN</const>
+					<const type="string">KROGER INTERNAL</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- KMP/KLP -->
+	<constraint>
+		<name>KMP/KLP Validation</name>
+		<description>A constraint to validate KMP/KLP ValidValue</description>		
+		<usefor>
+			<var>KLP_KMP_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>KLP_KMP_CD</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>KLP_KMP_CD</var>
+					<const type="string">K</const>
+					<const type="string">L</const>
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Corp Brands PDT Class Code -->
+	<constraint>
+		<name>Corp Brands PDT Class Code Validation</name>
+		<description>A constraint to validate PRODUCT_CLASS_CD ValidValue</description>		
+		<usefor>
+			<var>PRODUCT_CLASS_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>PRODUCT_CLASS_CD</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>PRODUCT_CLASS_CD</var>
+					<const type="string">B</const>
+					<const type="string">D</const>
+					<const type="string">F</const>					
+					<const type="string">P</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- EAS Tagging Method -->
+	<constraint>
+		<name>EAS Tagging Method Validation</name>
+		<description>A constraint to validate EAS Tagging Method ValidValue</description>		
+		<usefor>
+			<var>EAS_TAGGING_METHOD_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>EAS_TAGGING_METHOD_CD</var>
+				</defined>
+				<defined>				
+					<var>ISBASEUNIT</var>
+				</defined>
+				<eq>
+					<var>ISBASEUNIT</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>EAS_TAGGING_METHOD_CD</var>
+					<const type="string">Vendor</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- EAS Tag Class Code -->
+	<constraint>
+		<name>EAS Tag Class Code Validation</name>
+		<description>A constraint to validate EAS Tag Class Code ValidValue</description>		
+		<usefor>
+			<var>EAS_TAG_CLASS_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>EAS_TAG_CLASS_CD</var>
+				</defined>
+				<or>
+					<and>
+						<defined>				
+							<var>SALES_VARIANT_FLG</var>
+						</defined>
+						<eq>
+							<var>SALES_VARIANT_FLG</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+					<and>
+						<defined>				
+							<var>ISBASEUNIT</var>
+						</defined>
+						<eq>
+							<var>ISBASEUNIT</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+				</or>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>EAS_TAG_CLASS_CD</var>
+					<const type="string">CLASS_I</const>					
+					<const type="string">CLASS_II</const>
+					<const type="string">CLASS_III</const>
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!--Net content Kroger UOM-->
+	<constraint>
+		<name>Net content Kroger UOM Validation</name>
+		<description>A constraint to validate Net content Kroger UOM</description>		
+		<usefor>
+			<var>NET_CONTENT_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>NET_CONTENT_UOM_CD</var>
+				</defined>
+				<or>
+					<and>
+						<defined>				
+							<var>SALES_VARIANT_FLG</var>
+						</defined>
+						<eq>
+							<var>SALES_VARIANT_FLG</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+					<and>
+						<defined>				
+							<var>ISBASEUNIT</var>
+						</defined>
+						<eq>
+							<var>ISBASEUNIT</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+					<eq>
+						<var>PRODUCTTYPE</var>
+						<const type="string">PK</const>
+					</eq>
+				</or>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>NET_CONTENT_UOM_CD</var>
+					<const type="string">BX</const>					
+					<const type="string">CT</const>
+					<const type="string">DZ</const>
+					<const type="string">EA</const>					
+					<const type="string">FO</const>
+					<const type="string">FT</const>
+					<const type="string">GA</const>					
+					<const type="string">GR</const>
+					<const type="string">IN</const>
+					<const type="string">LB</const>					
+					<const type="string">LD</const>
+					<const type="string">LT</const>
+					<const type="string">ML</const>					
+					<const type="string">OZ</const>
+					<const type="string">PC</const>
+					<const type="string">PK</const>
+					<const type="string">PT</const>					
+					<const type="string">QT</const>
+					<const type="string">RO</const>
+					<const type="string">RW</const>
+					<const type="string">SF</const>					
+					<const type="string">US</const>
+					<const type="string">YD</const>
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+
+	<!--PID Promo Code-->
+	<constraint>
+		<name>PID Promo Code Validation</name>
+		<description>A constraint to validate PID Promo Code ValidValue</description>		
+		<usefor>
+			<var>PROMOTIONAL_PACK_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>PROMOTIONAL_PACK_CD</var>
+				</defined>
+				<or>
+					<and>
+						<defined>				
+							<var>SALES_VARIANT_FLG</var>
+						</defined>
+						<eq>
+							<var>SALES_VARIANT_FLG</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+					<and>
+						<defined>				
+							<var>ISBASEUNIT</var>
+						</defined>
+						<eq>
+							<var>ISBASEUNIT</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+				</or>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>PROMOTIONAL_PACK_CD</var>
+					<const type="string">P</const>					
+					<const type="string">C</const>
+					<const type="string">E</const>
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+
+	<!--GTIN Net weight Override UOM-->
+	<constraint>
+		<name>GTIN Net weight Override UOM Validation</name>
+		<description>A constraint to validate GTIN Net weight Override UOM</description>		
+		<usefor>
+			<var>NET_WEIGHT_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>NET_WEIGHT_UOM_CD</var>
+				</defined>
+				<or>
+					<and>
+						<defined>				
+							<var>SALES_VARIANT_FLG</var>
+						</defined>
+						<eq>
+							<var>SALES_VARIANT_FLG</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+					<and>
+						<defined>				
+							<var>ISBASEUNIT</var>
+						</defined>
+						<eq>
+							<var>ISBASEUNIT</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+				</or>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>NET_WEIGHT_UOM_CD</var>
+					<const type="string">LB</const>	
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Corporate Brands Item Type -->
+	<constraint>
+		<name>Corporate Brands Item Type Validation</name>
+		<description>A constraint to validate Corporate Brands Item Type</description>		
+		<usefor>
+			<var>CORPORATE_BRAND_TYPE_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>CORPORATE_BRAND_TYPE_CD</var>
+				</defined>
+				<defined>				
+					<var>PROCUREMENT_VARIANT_FLG</var>
+				</defined>
+				<eq>
+					<var>PROCUREMENT_VARIANT_FLG</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>CORPORATE_BRAND_TYPE_CD</var>
+					<const type="string">K</const>	
+					<const type="string">L</const>	
+					<const type="string">C</const>	
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!--Kroger Manufacturing Code-->
+	<constraint>
+		<name>Kroger Manufacturing Code Validation</name>
+		<description>A constraint to validate Kroger Manufacturing Code</description>		
+		<usefor>
+			<var>KROGER_MANUFACTURING_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>KROGER_MANUFACTURING_CD</var>
+				</defined>
+				<defined>				
+					<var>PROCUREMENT_VARIANT_FLG</var>
+				</defined>
+				<eq>
+					<var>PROCUREMENT_VARIANT_FLG</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>KROGER_MANUFACTURING_CD</var>
+					<const type="string">K</const>	
+					<const type="string">C</const>	
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Flash Point Temperature UOM - System Override -->
+	<constraint>
+		<name>Flash Pt Temp UOM Override Vali</name>
+		<description>A constraint to validate Flash Point Temperature UOM - System Override</description>		
+		<usefor>
+			<var>FLASH_POINT_TEMP_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>				
+					<var>ISBASEUNIT</var>
+				</defined>
+				<eq>
+					<var>ISBASEUNIT</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<and>			
+					<defined>
+						<var>FLASH_POINT_TEMP_UOM_CD</var>
+					</defined>
+					<in>
+						<var>FLASH_POINT_TEMP_UOM_CD</var>
+						<const type="string">FA</const>					
+					</in>
+				</and>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Maximum Inbound Temperature UOM- System Override -->	
+	<constraint>
+		<name>Maximum Inbound Temp UOM Vali</name>
+		<description>A constraint to validate Maximum Inbound Temperature UOM</description>		
+		<usefor>
+			<var>DLV_TO_DC_TEMP_MAX_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>				
+					<var>ISBASEUNIT</var>
+				</defined>
+				<eq>
+					<var>ISBASEUNIT</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<and>			
+					<defined>
+						<var>DLV_TO_DC_TEMP_MAX_UOM_CD</var>
+					</defined>
+					<in>
+						<var>DLV_TO_DC_TEMP_MAX_UOM_CD</var>
+						<const type="string">FA</const>					
+					</in>
+				</and>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Minimum Inbound Temperature UOM- Override -->	
+	<constraint>
+		<name>Minimum Inbound Temp UOM Vali</name>
+		<description>A constraint to validate Minimum Inbound Temperature UOM</description>		
+		<usefor>
+			<var>DLV_TO_DC_TEMP_MIN_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>				
+					<var>ISBASEUNIT</var>
+				</defined>
+				<eq>
+					<var>ISBASEUNIT</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<and>			
+					<defined>
+						<var>DLV_TO_DC_TEMP_MIN_UOM_CD</var>
+					</defined>
+					<in>
+						<var>DLV_TO_DC_TEMP_MIN_UOM_CD</var>
+						<const type="string">FA</const>					
+					</in>
+				</and>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Maximum Permissible Storage Temperature UOM- System Override -->
+	<constraint>
+		<name>Max Permissible Storage Temp UOM Vali</name>
+		<description>A constraint to validate Maximum Permissible Storage Temperature UOM- System Override</description>		
+		<usefor>
+			<var>STORAGE_TEM_MAX_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>				
+					<var>ISBASEUNIT</var>
+				</defined>
+				<eq>
+					<var>ISBASEUNIT</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<and>			
+					<defined>
+						<var>STORAGE_TEM_MAX_UOM_CD</var>
+					</defined>
+					<in>
+						<var>STORAGE_TEM_MAX_UOM_CD</var>
+						<const type="string">FA</const>					
+					</in>
+				</and>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Minimum Permissible Storage Temperature UOM- System Override -->
+	<constraint>
+		<name>Min Permissible Storage Temp UOM Vali</name>
+		<description>A constraint to validate Minimum Permissible Storage Temperature UOM- System Override</description>		
+		<usefor>
+			<var>STORAGE_TEMP_MIN_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>				
+					<var>ISBASEUNIT</var>
+				</defined>
+				<eq>
+					<var>ISBASEUNIT</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<and>			
+					<defined>
+						<var>STORAGE_TEMP_MIN_UOM_CD</var>
+					</defined>
+					<in>
+						<var>STORAGE_TEMP_MIN_UOM_CD</var>
+						<const type="string">FA</const>					
+					</in>
+				</and>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Item Data Origin -->
+	<constraint>
+		<name>Gross weight UOM-System Validation</name>
+		<description>A constraint to validate Gross weight UOM - System Override ValidValue</description>		
+		<usefor>
+			<var>GROSS_WEIGHT_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>GROSS_WEIGHT_UOM_CD</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>GROSS_WEIGHT_UOM_CD</var>
+					<const type="string">LB</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- GTIN Length UOM - System Override -->
+	<constraint>
+		<name>GTIN Length UOM-System Validation</name>
+		<description>A constraint to validate GTIN Length UOM - System Override ValidValue</description>		
+		<usefor>
+			<var>DEPTH_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>DEPTH_UOM_CD</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>DEPTH_UOM_CD</var>
+					<const type="string">IN</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- GTIN Width UOM - System Override -->
+	<constraint>
+		<name>GTIN Width UOM-System Validation</name>
+		<description>A constraint to validate GTIN Width UOM - System Override ValidValue</description>		
+		<usefor>
+			<var>WIDTH_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>WIDTH_UOM_CD</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>WIDTH_UOM_CD</var>
+					<const type="string">IN</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- GTIN Height UOM - System Override -->
+	<constraint>
+		<name>GTIN Height UOM-System Validation</name>
+		<description>A constraint to validate GTIN Height UOM - System Override ValidValue</description>		
+		<usefor>
+			<var>HEIGHT_UOM_CD</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>HEIGHT_UOM_CD</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<var>HEIGHT_UOM_CD</var>
+					<const type="string">IN</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- In-Store Markdown UPC Needed -->
+	<constraint>
+		<name>In-Store Markdown UPC Needed Validation</name>
+		<description>A constraint to validate In-Store Markdown UPC Needed ValidValue</description>		
+		<usefor>
+			<var>MARKDOWN_POSSIBLE_FLG</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>MARKDOWN_POSSIBLE_FLG</var>
+				</defined>
+				<or>
+					<and>
+						<defined>				
+							<var>SALES_VARIANT_FLG</var>
+						</defined>
+						<eq>
+							<var>SALES_VARIANT_FLG</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+					<and>
+						<defined>				
+							<var>ISBASEUNIT</var>
+						</defined>
+						<eq>
+							<var>ISBASEUNIT</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+				</or>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<op funct="uppercase">
+						<var>MARKDOWN_POSSIBLE_FLG</var>
+					</op>
+					<const type="string">TRUE</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Scannable Barcode -->
+	<constraint>
+		<name>Scannable Barcode Validation</name>
+		<description>A constraint to validate Scannable Barcode ValidValue</description>		
+		<usefor>
+			<var>ISSCANNABLEBARCODE</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>ISSCANNABLEBARCODE</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<op funct="uppercase">
+						<var>ISSCANNABLEBARCODE</var>
+					</op>
+					<const type="string">TRUE</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Shipper Flag -->
+	<constraint>
+		<name>Shipper Flag Validation</name>
+		<description>A constraint to validate Shipper Flag ValidValue</description>		
+		<usefor>
+			<var>SHIPPER_FLG</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>SHIPPER_FLG</var>
+				</defined>
+				<defined>
+					<var>PUBLISHED_GTIN_FLG</var>
+				</defined>
+				<eq>
+					<var>PUBLISHED_GTIN_FLG</var>
+					<const type="string">TRUE</const>
+				</eq>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<op funct="uppercase">
+						<var>SHIPPER_FLG</var>
+					</op>
+					<const type="string">TRUE</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Bonus Pack Item -->
+	<constraint>
+		<name>Bonus Pack Item Validation</name>
+		<description>A constraint to validate Bonus Pack Item ValidValue</description>		
+		<usefor>
+			<var>BONUS_PACK_FLG</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>BONUS_PACK_FLG</var>
+				</defined>
+				<or>
+					<and>
+						<defined>				
+							<var>SALES_VARIANT_FLG</var>
+						</defined>
+						<eq>
+							<var>SALES_VARIANT_FLG</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+					<and>
+						<defined>				
+							<var>ISBASEUNIT</var>
+						</defined>
+						<eq>
+							<var>ISBASEUNIT</var>
+							<const type="string">TRUE</const>
+						</eq>
+					</and>
+				</or>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<op funct="uppercase">
+						<var>BONUS_PACK_FLG</var>
+					</op>
+					<const type="string">TRUE</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Sales Variant (SV) Flag -->
+	<constraint>
+		<name>Sales Variant Flag Validation</name>
+		<description>A constraint to validate Sales Variant (SV) Flag ValidValue</description>		
+		<usefor>
+			<var>SALES_VARIANT_FLG</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>SALES_VARIANT_FLG</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<op funct="uppercase">
+						<var>SALES_VARIANT_FLG</var>
+					</op>
+					<const type="string">TRUE</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+	<!-- Procurement Variant (PV) Flag -->
+	<constraint>
+		<name>Procurement Variant Flag Validation</name>
+		<description>A constraint to validate Procurement Variant (PV) Flag ValidValue</description>		
+		<usefor>
+			<var>PROCUREMENT_VARIANT_FLG</var>
+		</usefor>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>PROCUREMENT_VARIANT_FLG</var>
+				</defined>
+			</and>
+		</condition>		
+		<action>					
+			<check>
+				<explanation>
+					<text>The specified value is not as per the allowed valid values. Please refer valid value list in Attribute spreadsheet for details</text>
+				</explanation>
+				<in>
+					<op funct="uppercase">
+						<var>PROCUREMENT_VARIANT_FLG</var>
+					</op>
+					<const type="string">TRUE</const>					
+				</in>
+			</check>
+		</action>
+	</constraint>
+
+
+</rulebase>
+

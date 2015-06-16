@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+    <name>rule</name>
+    <description lang="">rule</description>
+    <declare usage="local">
+        <var>CatalogAttr</var>
+        <link type="datasource">
+            <literal>CATALOG_ATTRIBUTE</literal>
+        </link>
+    </declare>
+    <constraint>
+        <name>Mandatory</name>
+        <description>List of required attributes</description>
+        <usefor>
+            <var>PRODUCTID</var>
+            <var>PRODUCTIDEXT</var>
+            <var>BUSINESS_ATTRIBUTE_NME</var>
+            <var>MDM_ATTRIBUTE_NME</var>
+            <var>PDM_COLUMN_NME</var>
+            <var>MDM_REPOSITORY_NME</var>
+        </usefor>
+        <action>
+            <check>
+                <defined>
+                    <var/>
+                </defined>
+            </check>
+        </action>
+    </constraint>
+    <constraint>
+        <name>SelectProductID</name>
+        <description>Create a drop down of AS Ref Numbers</description>
+        <usefor>
+            <var>PRODUCTID</var>
+        </usefor>
+        <action>
+            <select novalue="default">
+                <table distinct="true" order="1" source="datasource">
+                    <literal>CATALOG_ATTRIBUTE</literal>
+                    <literal>AS_NUMBER</literal>
+                </table>
+            </select>
+        </action>
+    </constraint>
+    <constraint>
+        <name>PopulateBusinessName</name>
+        <description>Fetch Business Attribute Name from Datasource</description>
+        <usefor>
+            <var>BUSINESS_ATTRIBUTE_NME</var>
+        </usefor>
+        <condition>
+            <defined>
+                <var>PRODUCTID</var>
+            </defined>
+        </condition>
+        <action>
+            <assign>
+                <var>BUSINESS_ATTRIBUTE_NME</var>
+                <table distinct="true" source="datasource">
+                    <literal>CATALOG_ATTRIBUTE</literal>
+                    <literal>DISPLAYNAME</literal>
+                    <where type="SQL">
+                        <sql>
+                            <eq>
+                                <literal>AS_NUMBER</literal>
+                                <var>PRODUCTID</var>
+                            </eq>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+            <access mode="view"/>
+        </action>
+    </constraint>
+    <constraint>
+        <name>PopulatePDMColumnName</name>
+        <description>Fetch PDM Column Name from Datasource</description>
+        <usefor>
+            <var>PDM_COLUMN_NME</var>
+        </usefor>
+        <condition>
+            <defined>
+                <var>PRODUCTID</var>
+            </defined>
+        </condition>
+        <action>
+            <assign>
+                <var>PDM_COLUMN_NME</var>
+                <table distinct="true" source="datasource">
+                    <literal>CATALOG_ATTRIBUTE</literal>
+                    <literal>NAME</literal>
+                    <where type="SQL">
+                        <sql>
+                            <eq>
+                                <literal>AS_NUMBER</literal>
+                                <var>PRODUCTID</var>
+                            </eq>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+            <access mode="view"/>
+        </action>
+    </constraint>
+    <constraint>
+        <name>PopulateMDMAttributeName</name>
+        <description>Fetch MDM Attribute Name from based on PDM Name</description>
+        <usefor>
+            <var>MDM_ATTRIBUTE_NME</var>
+            <var>PDM_COLUMN_NME</var>
+        </usefor>
+        <condition>
+            <and>
+                <defined>
+                    <var>PRODUCTID</var>
+                </defined>
+                <and>
+                    <neq>
+                        <var>PDM_COLUMN_NME</var>
+                        <const type="string">PRODUCTID</const>
+                    </neq>
+                    <neq>
+                        <var>PDM_COLUMN_NME</var>
+                        <const type="string">PRODUCTIDEXT</const>
+                    </neq>
+                </and>
+            </and>
+        </condition>
+        <action>
+            <assign>
+                <var>MDM_ATTRIBUTE_NME</var>
+                <table distinct="true" source="datasource">
+                    <literal>CATALOG_ATTRIBUTE</literal>
+                    <literal>NAME</literal>
+                    <where type="SQL">
+                        <sql>
+                            <eq>
+                                <literal>AS_NUMBER</literal>
+                                <var>PRODUCTID</var>
+                            </eq>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+            <access mode="view"/>
+        </action>
+        <action>
+            <clear>
+                <var>MDM_ATTRIBUTE_NME</var>
+            </clear>
+        </action>
+    </constraint>
+    <constraint>
+        <name>PopulateRepositoryName</name>
+        <description>Fetch Repository Name from Datasource</description>
+        <usefor>
+            <var>MDM_REPOSITORY_NME</var>
+        </usefor>
+        <condition>
+            <defined>
+                <var>PRODUCTID</var>
+            </defined>
+        </condition>
+        <action>
+            <assign>
+                <var>MDM_REPOSITORY_NME</var>
+                <table distinct="true" source="datasource">
+                    <literal>CATALOG_ATTRIBUTE</literal>
+                    <literal>CATALOGNAME</literal>
+                    <where type="SQL">
+                        <sql>
+                            <eq>
+                                <literal>AS_NUMBER</literal>
+                                <var>PRODUCTID</var>
+                            </eq>
+                        </sql>
+                    </where>
+                </table>
+            </assign>
+            <access mode="view"/>
+        </action>
+    </constraint>
+    <!--<constraint>
+        <name>Select1WSFlag</name>
+        <description>Create a dropdown for Send to 1 WS Flag</description>
+        <usefor>
+            <var>SEND_TO_1WS_FLG</var>
+        </usefor>
+        <action>
+            <select novalue="default">
+                <enum header="no">
+                    <const type="boolean">true</const>
+                    <const type="boolean">false</const>
+                </enum>
+            </select>
+        </action>
+    </constraint>-->
+	<constraint>
+		<name>Select1WSFlag</name>
+		<description>Create a dropdown for Send to 1 WS Flag</description>
+		<usefor>
+			<var>SEND_TO_1WS_FLG</var>
+		</usefor>
+		<action>
+			<select novalue="default" showoninput="2">
+				<enum col="2" header="no">
+					<const type="string">TRUE<sep/>Yes</const>
+					<const type="string">FALSE<sep/>No</const>
+				</enum>
+			</select>
+		</action>
+	</constraint>
+</rulebase>

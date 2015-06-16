@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8"?><Workflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1.3">
+<Owner>TIBCO</Owner>
+<Name>wf_mix_ModifyHierarchyRoles</Name>
+<Description>Modify HierarchyRoles</Description>
+<Parameter name="inDoc" direction="in" type="document" eval="variable">1</Parameter>
+<Parameter name="outDoc1" direction="out" type="document" eval="variable"/>
+<!--CIM Activities-->
+<Activity Name="GetItemData">
+<Action>GetRecord</Action>
+<Description>Get record data</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">inDoc</Parameter>
+<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="long" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">inDoc</Parameter>
+<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+</Activity>
+<Activity Name="ManageRecordCollection">
+<Action>ManageRecordCollection</Action>
+<Description>Construct record list</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">IDENTIFYVERSION</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="BundlingOption" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="RelationshipName" direction="in" type="string" eval="constant">DUMMY</Parameter>
+<Parameter name="OutRecordList" direction="out" eval="variable" type="recordlist">workRecordListNew</Parameter>
+</Activity>
+<Activity Name="Get_Venus_Response">
+<Action>EvaluateRuleBase</Action>
+<Description>Extract the venus response</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_mix_GetVenusResponse.xml</Parameter>
+<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+<Parameter name="SaveFlag" direction="in" type="string" eval="constant">SAVE</Parameter>
+<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="Venus_Status" direction="out" eval="variable" type="string">Venus_Status</Parameter>
+<Parameter name="TEMP_PRODUCT_string" direction="out" eval="variable" type="string">TEMP_PRODUCT_string</Parameter>
+<Parameter name="TEMP_PRODUCT_key_string" direction="out" eval="variable" type="string">TEMP_PRODUCT_key_string</Parameter>
+<Parameter name="VENUS_REASON" direction="out" eval="variable" type="string">VENUS_REASON</Parameter>
+<Parameter name="ValidationErrors" direction="out" eval="variable" type="long">fatalErrors</Parameter>
+<Parameter name="ValidationErrors1" direction="out" eval="variable" type="long">warningErrors</Parameter>
+<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc</Parameter>
+<Parameter name="OutRecordList" direction="out" eval="variable" type="recordlist">workRecordListNew</Parameter>
+</Activity>
+<Activity Name="Getdummy">
+<Action>Translate</Action>
+<Description>Translate to get item master document</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">TRANSLATE</Parameter>
+<Parameter name="Derived" direction="in" type="string" eval="constant">false</Parameter>
+<Parameter name="Translator" direction="in" type="string" eval="constant">XSLT</Parameter>
+<Parameter name="Map" direction="in" type="string" eval="constant">MDRITME1/maps/generateDummyInDoc_IM.xsl</Parameter>
+<Parameter name="OutputFormat" direction="in" type="string" eval="constant">mlXML</Parameter>
+<Parameter name="Xsl_Param_ReplacedGTIN" direction="in" type="string" eval="variable">TEMP_PRODUCT_string</Parameter>
+<Parameter name="Normalize" direction="in" type="string" eval="constant">None</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+<Parameter name="OutDocument" direction="out" eval="variable" type="document">transltedworkDoc2</Parameter>
+</Activity>
+<Activity Name="UpdateRecordStateAsConfirmed">
+<Action>UpdateRecordState</Action>
+<Description>Records reviewed, change state to confirmed</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordList</Parameter>
+<Parameter name="StepID" direction="out" eval="variable" type="long">update_step</Parameter>
+<Parameter name="CommandStatus" direction="out" eval="variable" type="string">commandStatus</Parameter>
+</Activity>
+<Activity Name="SpawnForCICReject">
+<Action>SpawnWorkflow</Action>
+<Description>Spawn individual WorkFlow for each record bundle</Description>
+<Execution>ASYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc1</Parameter>
+<Parameter name="RecordKey" direction="in" type="string" eval="variable">TEMP_PRODUCT_key_string</Parameter>
+<Parameter name="ProductId" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">workDoc1</Parameter>
+<Parameter name="ProductId1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">workDoc1</Parameter>
+<Parameter name="PRODUCTDBID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogDBID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="PRODUCTDBID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogDBID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogVersion" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDVersion/text()">workDoc1</Parameter>
+<Parameter name="VENUS_RSN" direction="in" type="string" eval="variable">VENUS_REASON</Parameter>
+<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_mix_SpawnCICOperation</Parameter>
+<Parameter name="DocumentTemplate" direction="in" type="string" eval="constant">MDRITME1/templates/cicReject.xml</Parameter>
+<Parameter name="Form" direction="in" type="string" eval="constant">MDRITME1/forms/fm_itemmaster_cic.xml</Parameter>
+<Parameter name="ChannelCredential" direction="in" type="string" eval="constant">8380160030003</Parameter>
+<Parameter name="TradingPartnerCredential" direction="in" type="long" eval="xpath" source="/Message/Header/MessageHeader[@origin='Receiver']/Member/PartyID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">ITEM_MASTER</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="MasterCatalogDBID2" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="SenderCredential" direction="in" type="string" eval="constant">0011110000019</Parameter>
+<Parameter name="errorFlag" direction="out" eval="variable" type="boolean">errorFlag</Parameter>
+</Activity>
+<Activity Name="SpawnForCICReview">
+<Action>SpawnWorkflow</Action>
+<Description>Spawn individual WorkFlow for each record bundle</Description>
+<Execution>ASYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+<Parameter name="RecordKey" direction="in" type="string" eval="variable">TEMP_PRODUCT_key_string</Parameter>
+<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_mix_SpawnCICOperation</Parameter>
+<Parameter name="ProductId" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">workDoc1</Parameter>
+<Parameter name="ProductId1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">workDoc1</Parameter>
+<Parameter name="PRODUCTDBID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogDBID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="PRODUCTDBID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogDBID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogVersion" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDVersion/text()">workDoc1</Parameter>
+<Parameter name="DocumentTemplate" direction="in" type="string" eval="constant">MDRITME1/templates/cicReview.xml</Parameter>
+<Parameter name="Form" direction="in" type="string" eval="constant">MDRITME1/forms/fm_itemmaster_cic.xml</Parameter>
+<Parameter name="SenderCredential" direction="in" type="string" eval="constant">0011110000019</Parameter>
+<Parameter name="ChannelCredential" direction="in" type="string" eval="constant">8380160030003</Parameter>
+<Parameter name="TradingPartnerCredential" direction="in" type="long" eval="xpath" source="/Message/Header/MessageHeader[@origin='Receiver']/Member/PartyID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">ITEM_MASTER</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="MasterCatalogDBID2" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="VENUS_RSN" direction="in" type="string" eval="variable">VENUS_REASON</Parameter>
+<Parameter name="errorFlag" direction="out" eval="variable" type="boolean">errorFlag</Parameter>
+</Activity>
+<Activity Name="SpawnForCICSync">
+<Action>SpawnWorkflow</Action>
+<Description>Spawn individual WorkFlow for each record bundle</Description>
+<Execution>ASYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">SPAWNWORKFLOW</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc1</Parameter>
+<Parameter name="RecordKey" direction="in" type="string" eval="variable">TEMP_PRODUCT_key_string</Parameter>
+<Parameter name="ProductId" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">workDoc1</Parameter>
+<Parameter name="ProductId1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">workDoc1</Parameter>
+<Parameter name="PRODUCTDBID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogDBID" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="PRODUCTDBID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogDBID1" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogDBID2" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalogVersion" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDVersion/text()">workDoc1</Parameter>
+<Parameter name="ProcessID" direction="in" type="string" eval="constant">MDRITME1/workflow/MIX/wf_mix_SpawnCICOperation</Parameter>
+<Parameter name="DocumentTemplate" direction="in" type="string" eval="constant">MDRITME1/templates/cicSync.xml</Parameter>
+<Parameter name="Form" direction="in" type="string" eval="constant">MDRITME1/forms/fm_itemmaster_cic.xml</Parameter>
+<Parameter name="SenderCredential" direction="in" type="string" eval="constant">0011110000019</Parameter>
+<Parameter name="ChannelCredential" direction="in" type="string" eval="constant">8380160030003</Parameter>
+<Parameter name="TradingPartnerCredential" direction="in" type="long" eval="xpath" source="/Message/Header/MessageHeader[@origin='Receiver']/Member/PartyID/DBID/text()">workDoc1</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">ITEM_MASTER</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="errorFlag" direction="out" eval="variable" type="boolean">errorFlag</Parameter>
+</Activity>
+<Activity Name="SetStatusToSuccess">
+<Action>UpdateEvent</Action>
+<Description>Set the event state to Success/Done</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventStatus" direction="in" type="string" eval="constant">SUCCESS</Parameter>
+<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+</Activity>
+<Activity Name="GetItemData_ItemMaster">
+<Action>GetRecord</Action>
+<Description>Get record data</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">transltedworkDoc3</Parameter>
+<Parameter name="eventState" direction="in" type="string" eval="constant">GETPRODUCTINFO</Parameter>
+<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+<Parameter name="RelationshipDepth" direction="in" type="long" eval="constant">-1</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="long" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionHeader/MasterCatalog/RevisionID/DBID/text()">transltedworkDoc3</Parameter>
+<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Contains</Parameter>
+<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+<Parameter name="RelationshipName24" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+<Parameter name="OutDocument" direction="out" eval="variable" type="document">workDoc1</Parameter>
+</Activity>
+<Activity Name="VerifyRecordStatus">
+<Action>VerifyRecordStatus</Action>
+<Description>VerifyRecord for Item Master</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">GETPRODUCTINFO</Parameter>
+<Parameter name="Agency" direction="in" type="string" eval="constant">SOURCE</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">ITEM_MASTER</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">transltedworkDoc2</Parameter>
+<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Contains</Parameter>
+<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+<Parameter name="RelationshipName24" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+<Parameter name="NoneInWorkflow" direction="out" eval="variable" type="boolean">NoneInWorkflow</Parameter>
+<Parameter name="OutDocument" direction="out" eval="variable" type="document">transltedworkDoc3</Parameter>
+</Activity>
+<Activity Name="ManageRecord">
+<Action>ManageRecordCollection</Action>
+<Description>Construct record list</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">IDENTIFYVERSION</Parameter>
+<Parameter name="RelationshipName" direction="in" type="string" eval="constant">Item_Master_Corporate_Average_List_Cost</Parameter>
+<Parameter name="RelationshipName1" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Allergen_MVL</Parameter>
+<Parameter name="RelationshipName2" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Diet_MVL</Parameter>
+<Parameter name="RelationshipName3" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Ingredient_MVL</Parameter>
+<Parameter name="RelationshipName4" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Nutrifacts_MVL</Parameter>
+<Parameter name="RelationshipName5" direction="in" type="string" eval="constant">Item_Master_Food_And_Bev_Prep_MVL</Parameter>
+<Parameter name="RelationshipName6" direction="in" type="string" eval="constant">Item_Master_Authorized_Region_MVL</Parameter>
+<Parameter name="RelationshipName7" direction="in" type="string" eval="constant">Item_Master_Measures_MVL</Parameter>
+<Parameter name="RelationshipName8" direction="in" type="string" eval="constant">Item_Master_Weight_MVL</Parameter>
+<Parameter name="RelationshipName9" direction="in" type="string" eval="constant">Item_Master_Temperature_MVL</Parameter>
+<Parameter name="RelationshipName10" direction="in" type="string" eval="constant">Item_Master_GPC_BRICK_MVL</Parameter>
+<Parameter name="RelationshipName11" direction="in" type="string" eval="constant">Item_Master_Peg_Measurement_MVL</Parameter>
+<Parameter name="RelationshipName12" direction="in" type="string" eval="constant">Images_for_Item</Parameter>
+<Parameter name="RelationshipName13" direction="in" type="string" eval="constant">Descriptions_for_Item</Parameter>
+<Parameter name="RelationshipName14" direction="in" type="string" eval="constant">Item_Organic_Claim</Parameter>
+<Parameter name="RelationshipName15" direction="in" type="string" eval="constant">Item_Master_Manufacturer_MVL</Parameter>
+<Parameter name="RelationshipName16" direction="in" type="string" eval="constant">Item_Master_CataloguePrice_MVL</Parameter>
+<Parameter name="RelationshipName17" direction="in" type="string" eval="constant">Item_Master_FlashPointTemperature_MVL</Parameter>
+<Parameter name="RelationshipName18" direction="in" type="string" eval="constant">Item_Master_OrderSizingFactor_MVL</Parameter>
+<Parameter name="RelationshipName19" direction="in" type="string" eval="constant">Item_Master_RetailPriceOnTradeItem_MVL</Parameter>
+<Parameter name="RelationshipName20" direction="in" type="string" eval="constant">Item_Master_Promotional_Trade_Item_MVL</Parameter>
+<Parameter name="RelationshipName21" direction="in" type="string" eval="constant">Contains</Parameter>
+<Parameter name="RelationshipName22" direction="in" type="string" eval="constant">Item_Master_FunctionalName_MVL</Parameter>
+<Parameter name="RelationshipName23" direction="in" type="string" eval="constant">Item_Master_GTINName_MVL</Parameter>
+<Parameter name="RelationshipName24" direction="in" type="string" eval="constant">Item_Master_HandlingInstructionCode_MVL</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="BundlingOption" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="RelationshipDepth" direction="in" type="long" eval="constant">-1</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc1</Parameter>
+<Parameter name="OutRecordList" direction="out" eval="variable" type="recordlist">workRecordList</Parameter>
+</Activity>
+<Activity Name="AddMsgInfoToEventCIN">
+<Start/>
+<Action>UpdateEvent</Action>
+<Description>Set the event state to Hierarchy Role Modify</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX Hierarchy Roles Modify</Parameter>
+</Activity>
+<Activity Name="SetStatusToSuccessReview">
+<Action>UpdateEvent</Action>
+<Description>Set the event state to Success/Done</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventStatus" direction="in" type="string" eval="constant">SUCCESS</Parameter>
+<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX Hier Roles Update Review</Parameter>
+</Activity>
+<Activity Name="SetStatusToSuccessReject">
+<Action>UpdateEvent</Action>
+<Description>Set the event state to Success/Done</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventStatus" direction="in" type="string" eval="constant">SUCCESS</Parameter>
+<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX Hier Roles Update Reject</Parameter>
+</Activity>
+<Activity Name="SetStatusToSuccessSync">
+<Action>UpdateEvent</Action>
+<Description>Set the event state to Success/Done</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventStatus" direction="in" type="string" eval="constant">SUCCESS</Parameter>
+<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+<Parameter name="eventDescriptor" direction="in" type="string" eval="constant">MIX Hier Roles Update Sync</Parameter>
+</Activity>
+<Activity Name="UpdateRecordStateAsConfirmedHierachyRolesWithOriginalValues">
+<Action>UpdateRecordState</Action>
+<Description>Records reviewed, change state to confirmed</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+<Parameter name="StepID" direction="out" eval="variable" type="long">update_step</Parameter>
+<Parameter name="CommandStatus" direction="out" eval="variable" type="string">commandStatus</Parameter>
+</Activity>
+<Activity Name="UpdateRecordStateAsConfirmedHierachyRolesAfterCICSync">
+<Action>UpdateRecordState</Action>
+<Description>Records reviewed, change state to confirmed</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">inDoc</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="StepID" direction="out" eval="variable" type="long">update_step</Parameter>
+<Parameter name="CommandStatus" direction="out" eval="variable" type="string">commandStatus</Parameter>
+</Activity>
+<Activity Name="UpdateRecordStateAsConfirmedHierachyRolesAfterCICReject">
+<Action>UpdateRecordState</Action>
+<Description>Records reviewed, change state to confirmed</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">inDoc</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="StepID" direction="out" eval="variable" type="long">update_step</Parameter>
+<Parameter name="CommandStatus" direction="out" eval="variable" type="string">commandStatus</Parameter>
+</Activity>
+<Activity Name="UpdateRecordStateAsConfirmedHierachyRolesAfterCICReview">
+<Action>UpdateRecordState</Action>
+<Description>Records reviewed, change state to confirmed</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">UPDATERECORDSTATUS</Parameter>
+<Parameter name="Status" direction="in" type="string" eval="constant">CONFIRMED</Parameter>
+<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">inDoc</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="StepID" direction="out" eval="variable" type="long">update_step</Parameter>
+<Parameter name="CommandStatus" direction="out" eval="variable" type="string">commandStatus</Parameter>
+</Activity>
+<Activity Name="UpdateHierarchyRoleStatus_SYNC">
+<Action>SaveRecord</Action>
+<Description/>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">SAVERECORD</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">inDoc</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="GenerateExistenceError" direction="in" type="string" eval="constant">false</Parameter>
+<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+<Parameter name="StandardValidation" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="Overwrite" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="RecordPerAsyncCall" direction="in" type="long" eval="constant">10</Parameter>
+<Parameter name="ATTRIBUTE_ITEM_HIERARCHY_STATUS_CD" direction="in" type="string" eval="constant">VIP_SYNCHRONIZED</Parameter>
+<Parameter name="ATTRIBUTE_ROLE_UPDATE_TS" direction="in" type="string" eval="variable">CurrentTimeStamp</Parameter>
+<Parameter name="RecordsAttempted" direction="out" eval="variable" type="long">attemptedCount</Parameter>
+<Parameter name="RecordsWithErrors" direction="out" eval="variable" type="long">errorsFound</Parameter>
+</Activity>
+<Activity Name="UpdateHierarchyRoleStatus_REVIEW">
+<Action>SaveRecord</Action>
+<Description/>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">SAVERECORD</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">inDoc</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="GenerateExistenceError" direction="in" type="string" eval="constant">false</Parameter>
+<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+<Parameter name="StandardValidation" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="Overwrite" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="RecordPerAsyncCall" direction="in" type="long" eval="constant">10</Parameter>
+<Parameter name="ATTRIBUTE_ITEM_HIERARCHY_STATUS_CD" direction="in" type="string" eval="constant">VIP_REVIEW</Parameter>
+<Parameter name="ATTRIBUTE_ROLE_UPDATE_TS" direction="in" type="string" eval="variable">CurrentTimeStamp</Parameter>
+<Parameter name="RecordsAttempted" direction="out" eval="variable" type="long">attemptedCount</Parameter>
+<Parameter name="RecordsWithErrors" direction="out" eval="variable" type="long">errorsFound</Parameter>
+</Activity>
+<Activity Name="UpdateHierarchyRoleStatus_REJECT">
+<Action>SaveRecord</Action>
+<Description/>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">SAVERECORD</Parameter>
+<Parameter name="MasterCatalog" direction="in" type="string" eval="constant">HierarchyRoles</Parameter>
+<Parameter name="ProductIds" direction="in" type="string" eval="xpath" source="/Message/Body/Document/BusinessDocument/CatalogAction/CatalogActionDetails/CatalogItem[1]/PartNumber/GlobalPartNumber/ProdID/IDNumber/text()">inDoc</Parameter>
+<Parameter name="VersionOption" direction="in" type="string" eval="constant">LATEST</Parameter>
+<Parameter name="GenerateExistenceError" direction="in" type="string" eval="constant">false</Parameter>
+<Parameter name="Severity" direction="in" type="long" eval="constant">9</Parameter>
+<Parameter name="StandardValidation" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="AsynProcessIndicator" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="Overwrite" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="OverrideConflict" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="RecordPerAsyncCall" direction="in" type="long" eval="constant">10</Parameter>
+<Parameter name="ATTRIBUTE_ITEM_HIERARCHY_STATUS_CD" direction="in" type="string" eval="constant">VIP_REJECT</Parameter>
+<Parameter name="ATTRIBUTE_ROLE_UPDATE_TS" direction="in" type="string" eval="variable">CurrentTimeStamp</Parameter>
+<Parameter name="RecordsAttempted" direction="out" eval="variable" type="long">attemptedCount</Parameter>
+<Parameter name="RecordsWithErrors" direction="out" eval="variable" type="long">errorsFound</Parameter>
+</Activity>
+<Activity Name="GetTimeStamp">
+<Action>EvaluateRuleBase</Action>
+<Description>Check Item is Confirmed or If should be published</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">EVALUATERULEBASE</Parameter>
+<Parameter name="AllowDuplicateInOutput" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="Rulebase" direction="in" type="string" eval="constant">MDRITME1/rulebase/MIX/rb_SharedObjects_MIX.xml</Parameter>
+<Parameter name="SaveFlag" direction="in" type="string" eval="constant">NOSAVE</Parameter>
+<Parameter name="EvaluateChildren" direction="in" type="boolean" eval="constant">true</Parameter>
+<Parameter name="ExecutionMode" direction="in" type="string" eval="constant">AllRecords</Parameter>
+<Parameter name="InRecordList" direction="in" type="recordlist" eval="variable">workRecordListNew</Parameter>
+<Parameter name="CurrentTimeStamp" direction="out" eval="variable" type="">CurrentTimeStamp</Parameter>
+</Activity>
+<Activity Name="NoMatchingCondition">
+<Action>NoOperation</Action>
+<Description/>
+<Execution>SYNCHR</Execution>
+</Activity>
+<Activity Name="PublishItemsToNotificationQueue">
+<Action>SendProtocolMessage</Action>
+<Description>Publish mlxml to BW Notification Queue</Description>
+<Execution>ASYNCHR</Execution>
+<Parameter name="eventState" direction="in" type="string" eval="constant">PUBLISHITEM</Parameter>
+<Parameter name="BizProtocol" direction="in" type="string" eval="constant">JMS</Parameter>
+<Parameter name="PayloadPackagingScheme" direction="in" type="string" eval="constant">OUTBOUND_DSD_EMAIL_MSG</Parameter>
+<Parameter name="TrackMessageResponse" direction="in" type="boolean" eval="constant">false</Parameter>
+<Parameter name="ConversationKey" direction="in" type="string" eval="xpath" source="">ConversationID</Parameter>
+<Parameter name="InDocument" direction="in" type="document" eval="variable">workDoc</Parameter>
+</Activity>
+<Activity Name="SetStatusToError">
+<Action>UpdateEvent</Action>
+<Description>Set the event status to Error/Done</Description>
+<Execution>SYNCHR</Execution>
+<Parameter name="eventStatus" direction="in" type="string" eval="constant">ERROR</Parameter>
+<Parameter name="eventState" direction="in" type="string" eval="constant">DONE</Parameter>
+<Parameter name="errorFlag" direction="in" type="boolean" eval="constant">true</Parameter>
+</Activity>
+<!--CIM Transitions-->
+<Transition FromActivity="GetItemData" ToActivity="ManageRecordCollection"/>
+<Transition FromActivity="ManageRecordCollection" ToActivity="UpdateRecordStateAsConfirmedHierachyRolesWithOriginalValues"/>
+<Transition FromActivity="Getdummy" ToActivity="VerifyRecordStatus"/>
+<Transition FromActivity="UpdateRecordStateAsConfirmed" ToActivity="SpawnForCICSync"/>
+<Transition FromActivity="SpawnForCICSync" ToActivity="GetTimeStamp"/>
+<Transition FromActivity="SpawnForCICReview" ToActivity="GetTimeStamp"/>
+<Transition FromActivity="SpawnForCICReject" ToActivity="GetTimeStamp"/>
+<Transition FromActivity="VerifyRecordStatus" ToActivity="GetItemData_ItemMaster"/>
+<Transition FromActivity="ManageRecord" ToActivity="UpdateRecordStateAsConfirmed"/>
+<Transition FromActivity="UpdateRecordStateAsConfirmedHierachyRolesWithOriginalValues" ToActivity="Get_Venus_Response"/>
+<Transition FromActivity="AddMsgInfoToEventCIN" ToActivity="GetItemData"/>
+<Transition FromActivity="UpdateRecordStateAsConfirmedHierachyRolesAfterCICSync" ToActivity="PublishItemsToNotificationQueue"/>
+<Transition FromActivity="UpdateRecordStateAsConfirmedHierachyRolesAfterCICReject" ToActivity="SetStatusToSuccessReject"/>
+<Transition FromActivity="UpdateRecordStateAsConfirmedHierachyRolesAfterCICReview" ToActivity="SetStatusToSuccessReview"/>
+<Transition FromActivity="UpdateHierarchyRoleStatus_SYNC" ToActivity="UpdateRecordStateAsConfirmedHierachyRolesAfterCICSync"/>
+<Transition FromActivity="UpdateHierarchyRoleStatus_REVIEW" ToActivity="UpdateRecordStateAsConfirmedHierachyRolesAfterCICReview"/>
+<Transition FromActivity="UpdateHierarchyRoleStatus_REJECT" ToActivity="UpdateRecordStateAsConfirmedHierachyRolesAfterCICReject"/>
+<Transition FromActivity="PublishItemsToNotificationQueue" ToActivity="SetStatusToSuccessSync"/>
+<Transition FromActivity="GetItemData_ItemMaster" ToActivity="SpawnForCICReview">
+<Description>If CIC Review is to be sent</Description><Rule> <Parameter direction="in" eval="variable" name="status" type="string" >Venus_Status</Parameter> <Parameter direction="out" name="result" type="boolean" ></Parameter> <Condition format="bsh" > <![CDATA[ result = ( (status!=null && status.equalsIgnoreCase("REVIEW")) ); ]]> </Condition> </Rule></Transition>
+<Transition FromActivity="GetItemData_ItemMaster" ToActivity="SpawnForCICReject"><Rule> <Parameter direction="in" eval="variable" name="status" type="string" >Venus_Status</Parameter> <Parameter direction="out" name="result" type="boolean" ></Parameter> <Condition format="bsh" > <![CDATA[ result = ( (status!=null && status.equalsIgnoreCase("REJECT")) ); ]]> </Condition> </Rule></Transition>
+<Transition FromActivity="GetItemData_ItemMaster" ToActivity="ManageRecord"><Rule> <Parameter direction="in" eval="variable" name="status" type="string" >Venus_Status</Parameter> <Parameter direction="out" name="result" type="boolean" ></Parameter> <Condition format="bsh" > <![CDATA[ result = ( (status!=null && status.equalsIgnoreCase("CONFIRM")) ); ]]> </Condition> </Rule></Transition>
+<Transition FromActivity="GetItemData_ItemMaster" ToActivity="SetStatusToSuccess"/>
+<Transition FromActivity="GetTimeStamp" ToActivity="UpdateHierarchyRoleStatus_REVIEW"><Rule> <Parameter direction="in" eval="variable" name="status" type="string" >Venus_Status</Parameter> <Parameter direction="out" name="result" type="boolean" ></Parameter> <Condition format="bsh" > <![CDATA[ result = ( (status!=null && status.equalsIgnoreCase("REVIEW")) ); ]]> </Condition> </Rule></Transition>
+<Transition FromActivity="GetTimeStamp" ToActivity="UpdateHierarchyRoleStatus_REJECT"><Rule> <Parameter direction="in" eval="variable" name="status" type="string" >Venus_Status</Parameter> <Parameter direction="out" name="result" type="boolean" ></Parameter> <Condition format="bsh" > <![CDATA[ result = ( (status!=null && status.equalsIgnoreCase("REJECT")) ); ]]> </Condition> </Rule></Transition>
+<Transition FromActivity="GetTimeStamp" ToActivity="UpdateHierarchyRoleStatus_SYNC"><Rule> <Parameter direction="in" eval="variable" name="status" type="string" >Venus_Status</Parameter> <Parameter direction="out" name="result" type="boolean" ></Parameter> <Condition format="bsh" > <![CDATA[ result = ( (status!=null && status.equalsIgnoreCase("CONFIRM")) ); ]]> </Condition> </Rule></Transition>
+<Transition FromActivity="GetTimeStamp" ToActivity="NoMatchingCondition"/>
+<Transition FromActivity="Get_Venus_Response" ToActivity="Getdummy"><Rule> <Parameter direction="in" eval="variable" name="status" type="string" >Venus_Status</Parameter> <Parameter direction="out" name="result" type="boolean" ></Parameter> <Condition format="bsh" > <![CDATA[ result = ( (status!=null && status.equalsIgnoreCase("REVIEW")) || (status!=null && status.equalsIgnoreCase("CONFIRM")) || (status!=null && status.equalsIgnoreCase("REJECT")) ); ]]> </Condition> </Rule></Transition>
+<Transition FromActivity="Get_Venus_Response" ToActivity="SetStatusToSuccess"/>
+<Transition type="error" FromActivity="Any" ToActivity="SetStatusToError"/>
+</Workflow>

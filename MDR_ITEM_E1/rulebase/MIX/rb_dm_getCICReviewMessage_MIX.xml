@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+	
+<rulebase metaversion="1.0">
+	<name>GetCICReviewMessage</name>
+	<description>Get CIC review message for input GTIN's</description>
+
+	<declare usage="input">
+		<var>listOfGtins1</var>
+	</declare>
+	<declare usage="input">
+		<var>listOfProductType1</var>
+	</declare>
+	<declare usage="input">
+		<var>InCICReviewMessage</var>
+	</declare>
+	
+	<declare usage="output">
+		<var>CICReviewMessage</var>
+	</declare>
+	
+	<declare usage="local">
+		<var>CICReviewMessageTemp</var>
+	</declare>
+
+
+	<constraint>
+		<name>CheckLV_for_FACILITY</name>
+		<description>CheckLV</description>
+		<condition>
+			<and>				
+				<defined>
+					<var>listOfGtins1</var>
+				</defined>
+				<defined>
+					<var>listOfProductType1</var>
+				</defined>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>CICReviewMessageTemp</var>
+				<op func="getCICReviewMessage">
+					<var>listOfGtins1</var>
+					<var>listOfProductType1</var>
+				</op>
+			</assign>
+		</action>
+	</constraint>
+	
+<!-- if the CIM review message is not passed by parent workflow than send the default message of clas status as 'NOT STARTED'
+	As of now this is the only scenario where CIC message is not passed from parent workflow. 
+-->		
+	<constraint>
+		<name>CheckInCICMessage</name>
+		<description>CheckInCICMessage</description>
+		<condition>
+				<undefined>
+					<var>InCICReviewMessage</var>
+				</undefined>
+		</condition>
+		<action>
+			<assign>
+				<var>InCICReviewMessage</var>
+				<const type="string">The Kroger Family tree class of this item is not yet scheduled for implementation. The sales, info provider and brand owner contacts will be notified regarding timelines and implementation instructions when the class is scheduled for rollout.</const>
+			</assign>
+		</action>
+	</constraint>
+	
+	<constraint>
+		<name>ConcatMessage</name>
+		<description>ConcatMessage</description>
+		<action>
+			<assign>
+				<var>CICReviewMessage</var>
+				<op func="concat">
+					<var>InCICReviewMessage</var>
+					<var>CICReviewMessageTemp</var>					
+				</op>
+			</assign>
+		</action>
+	</constraint>
+	
+</rulebase>

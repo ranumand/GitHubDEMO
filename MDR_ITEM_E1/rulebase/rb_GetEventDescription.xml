@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<rulebase metaversion="0.1">
+	<name>Updateeventnames</name>                                   
+	<description>Update events name</description>
+
+	<declare usage="input">
+		<var>REPO_NAME</var>
+	</declare>
+	<declare usage="input">
+		<var>subtype</var>
+	</declare>
+	<declare usage="output">
+		<var>event_desc</var>
+	</declare>
+	<constraint>
+		<name>GetFamilyTreeEventDesc_forModify</name>
+		<description>Get Family tree Event description for modify record</description>
+		<condition>
+			<and>
+				<defined>
+					<var>REPO_NAME</var>
+				</defined>
+				<or>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">PRIMARY_DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">RECAP_DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">CLASS</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">SUBCLASS</const>
+					</eq>
+				</or>				
+				<defined>
+					<var>subtype</var>
+				</defined>
+				<eq>
+					<var>subtype</var>
+					<const type="string">CatEditChange</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>                                                              
+				<var>event_desc</var>
+				<const type="string">Family_Tree_Record_Modify</const>
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>GetFamilyTreeEventDesc_forAdd</name>
+		<description>Get Family tree Event description for add record</description>
+		<condition>
+			<and>
+				<defined>
+					<var>REPO_NAME</var>
+				</defined>
+				<or>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">PRIMARY_DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">RECAP_DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">CLASS</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">SUBCLASS</const>
+					</eq>
+				</or>
+				<defined>
+					<var>subtype</var>
+				</defined>
+				<eq>
+					<var>subtype</var>
+					<const type="string">CatEditAdd</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>                                                              
+				<var>event_desc</var>
+				<const type="string">Family_Tree_Record_Add</const>
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>GetFamilyTreeEventDesc_forDelete</name>
+		<description>Get Family tree Event description for delete record</description>
+		<condition>
+			<and>
+				<defined>
+					<var>REPO_NAME</var>
+				</defined>
+				<or>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">PRIMARY_DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">RECAP_DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">DEPARTMENT</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">CLASS</const>
+					</eq>
+					<eq>
+						<var>REPO_NAME</var>
+						<const type="string">SUBCLASS</const>
+					</eq>
+				</or>
+				<defined>
+					<var>subtype</var>
+				</defined>
+				<eq>
+					<var>subtype</var>
+					<const type="string">CatEditDelete</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>                                                              
+				<var>event_desc</var>
+				<const type="string">Family_Tree_Record_Delete</const>
+			</assign>
+		</action>
+	</constraint> 
+	<constraint>
+		<name>GetEvantMasterEventDesc_forModify</name>
+		<description>Get Event Master Event description for modify</description>
+		<condition>
+			<and>
+				<defined>
+					<var>REPO_NAME</var>
+				</defined>
+				<eq>
+					<var>REPO_NAME</var>
+					<const type="string">EVENT_LKP</const>
+				</eq> 
+				<defined>
+					<var>subtype</var>
+				</defined>
+				<eq>
+					<var>subtype</var>
+					<const type="string">CatEditChange</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>                                                              
+				<var>event_desc</var>
+				<const type="string">Event_Master_Record_Modify</const>
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>GetEvantMasterEventDesc_forAdd</name>
+		<description>Get Event Master Event description for add</description>
+		<condition>
+			<and>
+				<defined>
+					<var>REPO_NAME</var>
+				</defined>
+				<eq>
+					<var>REPO_NAME</var>
+					<const type="string">EVENT_LKP</const>
+				</eq> 
+				<defined>
+					<var>subtype</var>
+				</defined>
+				<eq>
+					<var>subtype</var>
+					<const type="string">CatEditAdd</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>                                                              
+				<var>event_desc</var>
+				<const type="string">Event_Master_Record_Add</const>
+			</assign>
+		</action>
+	</constraint>
+	<constraint>
+		<name>GetEvantMasterEventDesc_forDelete</name>
+		<description>Get Event Master Event description for delete</description>
+		<condition>
+			<and>
+				<defined>
+					<var>REPO_NAME</var>
+				</defined>
+				<eq>
+					<var>REPO_NAME</var>
+					<const type="string">EVENT_LKP</const>
+				</eq> 
+				<defined>
+					<var>subtype</var>
+				</defined>
+				<eq>
+					<var>subtype</var>
+					<const type="string">CatEditDelete</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>                                                              
+				<var>event_desc</var>
+				<const type="string">Event_Master_Record_Delete</const>
+			</assign>
+		</action>
+	</constraint>
+</rulebase>

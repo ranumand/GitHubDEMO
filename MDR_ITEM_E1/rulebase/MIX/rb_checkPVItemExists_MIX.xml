@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rulebase metaversion="0.1">
+	<!-- This Rulebase will check if the PVITEM ID exists in PID having procurement_variant_flg as 'Y'. -->
+
+	<name>rb_checkPVItemExists_MIX</name>
+	<description>Check if any PVITEMID matches with the PID</description>
+
+	<declare>
+		<var>ITEM_MASTER_DS_REF</var>
+		<link type="datasource">
+			<literal>ITEM_MASTER_DS</literal>
+		</link>
+	</declare>
+
+	<declare usage="input">
+		<var>PVItemID</var>
+		<datatype type="string"/>
+	</declare>
+
+
+	<declare usage="input">
+		<var>operationtype</var>
+		<datatype type="string"/>
+	</declare>
+
+	<declare usage="local">
+		<var>procurementvariantflg</var>
+		<datatype type="string"/>
+	</declare>
+
+	<declare usage="output">
+		<var>ISPVItemExist</var>
+	</declare>
+
+	<declare usage="output">
+		<var>reviewmsg</var>
+		<datatype type="string"/>
+	</declare>
+
+	<declare usage="output">
+		<var>allBaseGtin</var>
+		<datatype type="arraylist"/>
+	</declare>
+
+
+	<!--Validate the Derived PVGTIN with PID source  -->
+
+	<constraint>
+		<name>CheckPVExistance</name>
+		<description>Check if PVITEMID exist in PID</description>
+		<condition>
+			<defined>
+				<var>PVItemID</var>
+			</defined>
+		</condition>
+		<action>
+			<assign>
+				<var>procurementvariantflg</var>
+				<table source="sql">
+					<literal>ITEM_MASTER_DS_REF/PROCUREMENT_VARIANT_FLG</literal>
+					<where>
+						<sql>
+							<eq>
+								<literal>ITEM_MASTER_DS_REF/ITEM_ID</literal>
+								<var>PVItemID</var>
+							</eq>	
+						</sql>
+					</where>
+				</table>
+			</assign>
+		</action>
+	</constraint>
+
+	<!-- 	Validate the output of first constraint 'CheckPVExistance' procurementvariantflg against 'Y' or 'N' or NULL    -->
+	<constraint>
+		<name>PopulatePVItemExist</name>
+		<description>Populate the PVITEM exist flag as True</description>
+		<condition>
+			<and>
+				<defined>
+					<var>procurementvariantflg</var>
+				</defined>
+				<eq>
+					<var>procurementvariantflg</var>
+					<const type="string">Y</const>
+				</eq>                            
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>ISPVItemExist</var>
+				<const type="string">TRUE</const>
+			</assign>
+		</action>
+		<action>
+			<assign>
+				<var>ISPVItemExist</var>
+				<const type="string">FALSE</const>
+			</assign>			
+		</action>
+	</constraint>
+
+	<!-- Constraint to derive all base GTIN from the InDoc  and will be used when operation type is NEW and PVGTIN exist in PID-->
+
+	<constraint>
+		<name>PopulateBaseGTIN</name>
+		<description>Populate the BaseGTIN from InDoc where isBaseUnit is true</description>
+		<condition>
+			<and>
+				<eq>
+					<var>CATALOG_NAME</var>
+					<const type="string">ITEM_MASTER</const>
+				</eq>
+				<defined>
+					<var>isBaseUnit</var>
+				</defined>
+				<eq>
+					<var>isBaseUnit</var>
+					<const type="string">true</const>
+				</eq>
+			</and>
+		</condition>
+		<action>
+			<assign>
+				<var>allBaseGtin</var>
+				<var>productid</var>				
+			</assign>			
+		</action>
+	</constraint>
+
+	<!-- Constraint to sent the review message when Operation type is INITIAL LOAD and PVITEMID doesnot exist in PID.-->
+
+	<constraint>
+		<name>PopulateReviewMsg</name>
+		<description>Populate the review message when Operation type is INITIAL LOAD and PVITEMID doesnot exist in PID</description>
+		<condition>
+			<and>
+				<defined>
+					<var>operationtype</var>
+				</defined>
+				<eq>
+					<var>operationtype</var>
+					<const type="string">INITIALLOAD</const>
+				</eq>
+				<eq>
+				<var>ISPVItemExist</var>
+				<const type="string">FALSE</const>
+				</eq>
+			</and>
+			
+		</condition>
+		<action>
+			<assign>
+				<var>reviewmsg</var>
+				<const type="string">The item was submitted as a publication type of INITIAL LOAD. This item is not currently active in the Kroger Family of Stores and needs to be submitted as a publication type of NEW in order to be processed</const>
+			</assign>			
+		</action>
+	</constraint>
+
+</rulebase>

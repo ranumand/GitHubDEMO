@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<recordui>
+	<catalog id="34389">
+		<grouptab>
+			<group name="General">
+				<item>Overall</item>
+				<item>Descriptions_for_Item</item>
+				<item>Item_Master_FunctionalName_MVL</item>
+				<item>Item_Master_GTINName_MVL</item>
+				<item>Item_Master_HandlingInstructionCode_MVL</item>
+				<item>Item_Master_Promotional_Trade_Item_MVL</item>
+				<item>Promotional_Item_Details</item>
+				<item>Coupon_Family_Code</item>
+				<item>Discontinue</item>
+				<item>CategorySpecific</item>
+				<item>Contact_Information</item>
+				<item>CorpBrands</item>
+				<item>FamilyTree</item>
+				<item>General</item>
+				<item>Tag_Label</item>
+				<item>Item_Master_RetailPriceOnTradeItem_MVL</item>
+			</group>
+			<group name="Supply Chain">
+				<item>Supply_Chain</item>
+				<item>Procurement</item>
+				<item>Item_Master_Temperature_MVL</item>
+				<item>Item_Master_Measures_MVL</item>
+				<item>Item_Master_Weight_MVL</item>
+				<item>Item_Master_OrderSizingFactor_MVL</item>
+				<item>Item_Master_Manufacturer_MVL</item>
+				<item>Item_Master_Corporate_Average_List_Cost</item>
+			</group>
+			<group name="Hazard">
+				<item>Hazard</item>
+				<item>Item_Master_FlashPointTemperature_MVL</item>
+			</group>
+			<group name="Retail Ops">
+				<item>RECLAMATION</item>
+				<item>SHRINK</item>
+				<item>MarkDowns</item>
+				<item>WIC</item>
+			</group>
+			<group name="Nutrition/Allergen/Ingredients">
+				<item>Nutritional_Packaging</item>
+				<item>Item_Master_Food_And_Bev_Allergen_MVL</item>
+				<item>Item_Master_Food_And_Bev_Diet_MVL</item>
+				<item>Item_Master_Food_And_Bev_Prep_MVL</item>
+				<item>Item_Master_Food_And_Bev_Ingredient_MVL</item>
+				<item>Item_Master_Food_And_Bev_Nutrifacts_MVL</item>
+				<item>Other</item>
+			</group>
+			<group name="Packaging">
+				<item>Packaging_Details</item>
+				<item>Sustainability</item>
+				<item>Item_Master_Peg_Measurement_MVL</item>
+			</group>
+			<group name="Submission Details">
+				<item>Vendor_Submission_Details</item>
+				<item>Internal</item>
+				<item>Item_Master_GPC_BRICK_MVL</item>
+				<item>Item_Master_CataloguePrice_MVL</item>
+				<item>Item_Organic_Claim</item>						
+			</group>
+			<group name="IP Attachments">
+				<item>Images_for_Item</item>
+			</group>
+			<group name="Technical Attributes">
+				<item>IT_Attributes</item>
+			</group>
+			<group name="Regions">
+				<item>Item_Master_Authorized_Region_MVL</item>
+			</group>
+		</grouptab>
+		<relationshipShowAsTab>
+			<relationship>
+				<name>Item_Master_Food_And_Bev_Allergen_MVL</name>
+				<tabname>Allergens</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Food_And_Bev_Diet_MVL</name>
+				<tabname>Diet</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Food_And_Bev_Prep_MVL</name>
+				<tabname>Food Preparation</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Food_And_Bev_Ingredient_MVL</name>
+				<tabname>Ingredients</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Food_And_Bev_Nutrifacts_MVL</name>
+				<tabname>Nutrifacts</tabname>
+			</relationship>
+			<relationship>
+				<name>Descriptions_for_Item</name>
+				<tabname>Descriptions</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_FunctionalName_MVL</name>
+				<tabname>Functional Name</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_GTINName_MVL</name>
+				<tabname>GTIN Name</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_HandlingInstructionCode_MVL</name>
+				<tabname>Handling Instruction Code</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Promotional_Trade_Item_MVL</name>
+				<tabname>Promotional Item</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Peg_Measurement_MVL</name>
+				<tabname>Peg Measurement</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Measures_MVL</name>
+				<tabname>Measures/Dimensions</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_GPC_BRICK_MVL</name>
+				<tabname>GPC Bricks</tabname>
+			</relationship>
+			<relationship>
+				<name>Images_for_Item</name>
+				<tabname>External Attachments</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Temperature_MVL</name>
+				<tabname>Temperatures</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Weight_MVL</name>
+				<tabname>Weights</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Authorized_Region_MVL</name>
+				<tabname>Regions</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_RetailPriceOnTradeItem_MVL</name>
+				<tabname>Retail Price On Trade Item</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_OrderSizingFactor_MVL</name>
+				<tabname>Order Sizing Factor</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_FlashPointTemperature_MVL</name>
+				<tabname>FlashPoint Temperature</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Manufacturer_MVL</name>
+				<tabname>Manufacturing Information</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_CataloguePrice_MVL</name>
+				<tabname>Catalogue Price</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Organic_Claim</name>
+				<tabname>Organic Claim</tabname>
+			</relationship>
+			<relationship>
+				<name>Item_Master_Corporate_Average_List_Cost</name>
+				<tabname>Corporate Average List Cost</tabname>
+			</relationship>
+		</relationshipShowAsTab>
+	</catalog>
+	
+	<catalog id="58822">
+
+
+		<relationshipShowAsTab>
+		
+			<!--			
+			* Added Relationship to display State Child Records for WIC Eligible Items. 
+			-->
+			<relationship><name>Attribute_Valid_Value_LKP_To_Valid_Value_List_LKP</name>
+			<tabname>Valid Values List</tabname></relationship>
+			 
+
+		</relationshipShowAsTab>
+
+		<grouptab>
+
+			<!--
+			* Added Relationship to display State Child Records for WIC Eligible Items. 
+			-->
+			<group name="Valid Values List">
+				<item>AttributeData</item>
+				<item>Attribute_Valid_Value_LKP_To_Valid_Value_List_LKP</item>
+			</group>
+			<group name="General">
+			
+				<item>System</item>				 
+			</group>
+		</grouptab>
+
+	</catalog>
+</recordui>

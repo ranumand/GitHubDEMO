@@ -1,0 +1,31 @@
+<rulebase xmlns="http://www.tibco.com/cim/rulebase/beans" metaversion="1.0">
+    <name>rb_SharedObjects_MIX</name>
+    <description lang="">rb_SharedObjects_MIX</description>
+    <declare usage="input">
+        <var>Publish_GTIN</var>
+        <datatype type="string"/>
+    </declare>
+    <declare usage="output">
+        <var>CurrentTimeStamp</var>
+        <datatype type="string"/>
+    </declare>
+    <constraint>
+        <name>AssignCurrentTimeStamp</name>
+        <description>AssignCurrentTimeStamp</description>
+        <usefor>
+            <var>CurrentTimeStamp</var>
+        </usefor>
+        <condition>
+            <eq>
+                <var>GTIN</var>
+                <var>Publish_GTIN</var>
+            </eq>
+        </condition>
+        <action>
+            <assign>
+                <var>CurrentTimeStamp</var>
+                <var>SESSION/timestamp</var>
+            </assign>
+        </action>
+    </constraint>
+</rulebase>
